@@ -15,22 +15,51 @@ export const SIZE_OPTIONS: SizeOption[] = [
 ];
 
 export const COLOR_OPTIONS: ColorOption[] = [
+  // Reds (4)
   { id: 'red', name: 'Red', class: 'bg-red-500', hex: '#ef4444' },
-  { id: 'orange', name: 'Orange', class: 'bg-orange-500', hex: '#f97316' },
-  { id: 'yellow', name: 'Yellow', class: 'bg-yellow-400', hex: '#facc15' },
-  { id: 'green', name: 'Green', class: 'bg-green-500', hex: '#22c55e' },
-  { id: 'teal', name: 'Teal', class: 'bg-teal-500', hex: '#14b8a6' },
-  { id: 'blue', name: 'Blue', class: 'bg-blue-500', hex: '#3b82f6' },
-  { id: 'indigo', name: 'Indigo', class: 'bg-indigo-500', hex: '#6366f1' },
-  { id: 'purple', name: 'Purple', class: 'bg-purple-500', hex: '#a855f7' },
-  { id: 'pink', name: 'Pink', class: 'bg-pink-500', hex: '#ec4899' },
+  { id: 'red-light', name: 'Light Red', class: 'bg-red-300', hex: '#fca5a5' },
+  { id: 'red-dark', name: 'Dark Red', class: 'bg-red-700', hex: '#b91c1c' },
   { id: 'rose', name: 'Rose', class: 'bg-rose-500', hex: '#f43f5e' },
+  // Oranges (3)
+  { id: 'orange', name: 'Orange', class: 'bg-orange-500', hex: '#f97316' },
+  { id: 'orange-light', name: 'Light Orange', class: 'bg-orange-300', hex: '#fdba74' },
+  { id: 'amber', name: 'Amber', class: 'bg-amber-500', hex: '#f59e0b' },
+  // Yellows (3)
+  { id: 'yellow', name: 'Yellow', class: 'bg-yellow-400', hex: '#facc15' },
+  { id: 'yellow-light', name: 'Light Yellow', class: 'bg-yellow-200', hex: '#fef08a' },
+  { id: 'lime', name: 'Lime', class: 'bg-lime-500', hex: '#84cc16' },
+  // Greens (4)
+  { id: 'green', name: 'Green', class: 'bg-green-500', hex: '#22c55e' },
+  { id: 'green-light', name: 'Light Green', class: 'bg-green-300', hex: '#86efac' },
+  { id: 'green-dark', name: 'Dark Green', class: 'bg-green-700', hex: '#15803d' },
+  { id: 'emerald', name: 'Emerald', class: 'bg-emerald-500', hex: '#10b981' },
+  // Teals & Cyans (3)
+  { id: 'teal', name: 'Teal', class: 'bg-teal-500', hex: '#14b8a6' },
+  { id: 'cyan', name: 'Cyan', class: 'bg-cyan-500', hex: '#06b6d4' },
+  { id: 'sky', name: 'Sky', class: 'bg-sky-500', hex: '#0ea5e9' },
+  // Blues (4)
+  { id: 'blue', name: 'Blue', class: 'bg-blue-500', hex: '#3b82f6' },
+  { id: 'blue-light', name: 'Light Blue', class: 'bg-blue-300', hex: '#93c5fd' },
+  { id: 'blue-dark', name: 'Dark Blue', class: 'bg-blue-700', hex: '#1d4ed8' },
+  { id: 'navy', name: 'Navy', class: 'bg-blue-900', hex: '#1e3a8a' },
+  // Indigos & Violets (2)
+  { id: 'indigo', name: 'Indigo', class: 'bg-indigo-500', hex: '#6366f1' },
+  { id: 'violet', name: 'Violet', class: 'bg-violet-500', hex: '#8b5cf6' },
+  // Purples (3)
+  { id: 'purple', name: 'Purple', class: 'bg-purple-500', hex: '#a855f7' },
+  { id: 'purple-dark', name: 'Dark Purple', class: 'bg-purple-700', hex: '#7e22ce' },
+  { id: 'fuchsia', name: 'Fuchsia', class: 'bg-fuchsia-500', hex: '#d946ef' },
+  // Pinks (2)
+  { id: 'pink', name: 'Pink', class: 'bg-pink-500', hex: '#ec4899' },
+  { id: 'pink-light', name: 'Light Pink', class: 'bg-pink-300', hex: '#f9a8d4' },
+  // Neutrals (4)
   { id: 'brown', name: 'Brown', class: 'bg-amber-800', hex: '#92400e' },
   { id: 'slate', name: 'Slate', class: 'bg-slate-500', hex: '#64748b' },
   { id: 'black', name: 'Black', class: 'bg-black', hex: '#000000' },
   { id: 'white', name: 'White', class: 'bg-white border border-slate-200', hex: '#ffffff' },
-  { id: 'warm', name: 'Warm', class: 'bg-orange-200', hex: 'Warm Tone' },
-  { id: 'cool', name: 'Cool', class: 'bg-blue-200', hex: 'Cool Tone' },
+  // Tones (2)
+  { id: 'warm', name: 'Warm Tone', class: 'bg-gradient-to-r from-orange-200 to-red-200', hex: 'Warm Tone' },
+  { id: 'cool', name: 'Cool Tone', class: 'bg-gradient-to-r from-blue-200 to-cyan-200', hex: 'Cool Tone' },
 ];
 
 export const INFOGRAPHIC_STYLES: InfographicStyle[] = [

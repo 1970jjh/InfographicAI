@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Slide, GenerationConfig, GeneratedImage, AspectRatio, SlideContent } from "../types";
+import { Slide, GenerationConfig, GeneratedImage, AspectRatio } from "../types";
 import { INFOGRAPHIC_STYLES } from "../data/styles";
 
 // Helper to strip the data:image/jpeg;base64, prefix
@@ -13,8 +13,6 @@ const getMimeTypeFromDataUrl = (dataUrl: string): string => {
 };
 
 const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
-// Updated to Gemini 3.0 Pro for higher quality text reasoning as requested
-const TEXT_MODEL_NAME = 'gemini-3-pro-preview';
 
 export const ensureApiKey = async (): Promise<void> => {
   const win = window as any;
@@ -61,7 +59,7 @@ export const generateInfographic = async (
   selectedSlides: Slide[],
   config: GenerationConfig
 ): Promise<string | null> => {
-  
+
   await ensureApiKey();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -71,20 +69,20 @@ export const generateInfographic = async (
   const styleName = selectedStyle ? selectedStyle.name : 'Custom';
   const styleDesc = selectedStyle ? selectedStyle.description : 'Match the reference image style.';
   const sizeInstruction = getSizeInstruction(config.sizeOption);
-  
+
   // Color Instruction
-  const colorInstruction = config.selectedColor 
+  const colorInstruction = config.selectedColor
     ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
     : "Color Palette: Auto-detect the best color scheme based on the content and style.";
 
   let prompt = `Create a single, high-quality, professional infographic that summarizes the key information from the provided slide images.
-  
+
   Language: ${config.language}
   Style: ${styleName}
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
-  
+
   Instructions:
   - Combine the content from the input slides into one cohesive narrative within a single image.
   - Use the specified language for all text.
@@ -145,77 +143,15 @@ export const generateInfographic = async (
   }
 };
 
-export const generateSlideContent = async (
-  selectedSlides: Slide[],
-  config: GenerationConfig
-): Promise<SlideContent | null> => {
-  await ensureApiKey();
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  const parts: any[] = [];
-  
-  const prompt = `Analyze the provided slide images and summarize the content into a structure suitable for a single presentation slide.
-  
-  Output Language: ${config.language}
-  
-  Return the result in JSON format with the following structure:
-  - title: A clear, engaging title for the summary slide.
-  - subtitle: A subtitle or tagline.
-  - bodyPoints: An array of 3-5 key bullet points summarizing the most important information.
-  - summary: A brief 1-2 sentence executive summary.
-  - footer: A suggestion for a footer text (e.g., department name or key takeaway).
-  `;
-
-  parts.push({ text: prompt });
-
-  selectedSlides.forEach((slide) => {
-    parts.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: getBase64FromDataUrl(slide.originalImage),
-      },
-    });
-  });
-
-  try {
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL_NAME,
-      contents: { parts },
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            subtitle: { type: Type.STRING },
-            bodyPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-            footer: { type: Type.STRING },
-            summary: { type: Type.STRING }
-          },
-          required: ['title', 'bodyPoints', 'summary']
-        }
-      }
-    });
-
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text) as SlideContent;
-
-  } catch (error: any) {
-    console.error("Slide Content Gen Error:", error);
-    handleAuthError(error);
-    throw error;
-  }
-};
 
 // Helper for auth error
 const handleAuthError = async (error: any) => {
    const errorMessage = error.message || error.toString();
    const win = window as any;
-   
+
    if (
-      errorMessage.includes('403') || 
-      errorMessage.includes('PERMISSION_DENIED') || 
+      errorMessage.includes('403') ||
+      errorMessage.includes('PERMISSION_DENIED') ||
       errorMessage.includes('Requested entity was not found')
     ) {
        if (win.aistudio) {
@@ -243,7 +179,7 @@ export const generateSlideVariations = async (
              contents: {
                  parts: [
                      { text: prompt },
-                     { 
+                     {
                          inlineData: {
                              mimeType: mimeType,
                              data: base64
@@ -258,10 +194,10 @@ export const generateSlideVariations = async (
                  }
              }
          });
-         
+
          const parts = response.candidates?.[0]?.content?.parts;
          const imagePart = parts?.find(p => p.inlineData);
-         
+
          if (imagePart && imagePart.inlineData) {
              return {
                  id: crypto.randomUUID(),
