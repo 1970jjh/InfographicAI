@@ -15,8 +15,8 @@ const getMimeTypeFromDataUrl = (dataUrl: string): string => {
 const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
 // Updated to Gemini 3.0 Pro for higher quality text reasoning as requested
 const TEXT_MODEL_NAME = 'gemini-3-pro-preview';
-// Veo 3.1 for video generation
-const VIDEO_MODEL_NAME = 'veo-3.1-generate-preview';
+// Veo 2.0 for video generation (Image-to-Video)
+const VIDEO_MODEL_NAME = 'veo-2.0-generate-001';
 
 export const ensureApiKey = async (): Promise<void> => {
   const win = window as any;
@@ -290,7 +290,7 @@ export interface VideoGenerationResult {
   state: 'ACTIVE' | 'PENDING' | 'FAILED';
 }
 
-// Generate video from infographic using Veo 3.1
+// Generate video from infographic using Veo 2.0
 export const generateVideoFromInfographic = async (
   infographicImage: string,
   config: GenerationConfig
@@ -325,49 +325,39 @@ Video Requirements:
     const mimeType = getMimeTypeFromDataUrl(infographicImage);
     const base64 = getBase64FromDataUrl(infographicImage);
 
-    const response = await ai.models.generateContent({
+    // Use the video generation API with correct method
+    const operation = await ai.models.generateVideos({
       model: VIDEO_MODEL_NAME,
-      contents: {
-        parts: [
-          { text: videoPrompt },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64
-            }
-          }
-        ]
+      prompt: videoPrompt,
+      image: {
+        imageBytes: base64,
+        mimeType: mimeType
       },
       config: {
+        aspectRatio: '16:9',
+        numberOfVideos: 1,
+        durationSeconds: 8,
+        personGeneration: 'allow_adult',
         generateAudio: true
       }
     });
 
+    // Poll for completion
+    let result = operation;
+    while (!result.done) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      result = await ai.operations.get({ operation: result });
+    }
+
     // Check for video in response
-    const candidates = response.candidates;
-    if (!candidates || candidates.length === 0) {
-      console.error("No candidates in video response");
-      return null;
-    }
-
-    const resultParts = candidates[0].content.parts;
-    const videoPart = resultParts.find((p: any) => p.inlineData?.mimeType?.startsWith('video/'));
-
-    if (videoPart && videoPart.inlineData) {
-      const videoDataUrl = `data:${videoPart.inlineData.mimeType};base64,${videoPart.inlineData.data}`;
-      return {
-        videoUrl: videoDataUrl,
-        state: 'ACTIVE'
-      };
-    }
-
-    // Check for fileData (for larger videos returned as file reference)
-    const fileVideoPart = resultParts.find((p: any) => p.fileData?.mimeType?.startsWith('video/'));
-    if (fileVideoPart && fileVideoPart.fileData) {
-      return {
-        videoUrl: fileVideoPart.fileData.fileUri,
-        state: 'ACTIVE'
-      };
+    if (result.response?.generatedVideos && result.response.generatedVideos.length > 0) {
+      const video = result.response.generatedVideos[0];
+      if (video.video?.uri) {
+        return {
+          videoUrl: video.video.uri,
+          state: 'ACTIVE'
+        };
+      }
     }
 
     return null;
