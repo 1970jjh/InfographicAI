@@ -339,32 +339,40 @@ export const generateVideoFromSlides = async (
   await ensureApiKey();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Cinematic business movie style video prompt (NO animation, English only)
-  const videoPrompt = `Create an 8-second cinematic video based on the content from the provided slide images.
+  // K-pop Idol Animation Style video prompt (K-pop Demon Hunters style)
+  const videoPrompt = `Create an 8-second dynamic animated video in Korean idol animation style.
 
-IMPORTANT REQUIREMENTS:
-- Style: Business movie / Corporate documentary style (NO animation, NO cartoon, NO motion graphics)
-- Language: English ONLY (Do NOT use Korean or any other language)
-- Aspect Ratio: 16:9 widescreen cinematic format
+CRITICAL REQUIREMENTS:
+- DO NOT show or include the uploaded slide images in the video AT ALL
+- Instead, CREATE NEW animated visuals inspired by the TOPIC/THEME of the content
+- Style: K-pop Demon Hunters animation style (Korean idol aesthetic, vibrant, energetic)
+- Language: English text only if any text is needed
+- Aspect Ratio: 16:9 widescreen
 - Duration: Exactly 8 seconds
+- MINIMUM 3 DIFFERENT SCENES required
 
-Video Direction:
-- Use real-world cinematic visuals with professional cinematography
-- Apply dramatic lighting, shallow depth of field, and smooth camera movements
-- Create a professional business atmosphere like a corporate film or documentary
-- Include realistic scenes that represent the content: office environments, professionals working, business meetings, technology, or relevant real-world imagery
-- Use subtle, elegant transitions between scenes
-- Add minimal English text overlays only for key points (clean, professional typography)
-- Include cinematic color grading (professional, warm tones)
-- Background music style: Inspiring corporate/motivational (instrumental only)
+Animation Style Direction:
+- Korean idol/K-pop animation aesthetic (like K-pop Demon Hunters, Stray Kids animations)
+- Vibrant neon colors, dynamic lighting effects, glowing elements
+- Fast-paced action sequences with dramatic poses
+- Stylish character movements with idol-like charisma
+- Cool visual effects: light trails, energy bursts, sparkles
+- Dynamic camera angles and fast cuts between scenes
 
-Narrative Structure:
-- Opening (0-2s): Establish the topic with an impactful cinematic shot
-- Development (2-5s): Present the core message through visual storytelling
-- Conclusion (5-8s): End with a powerful, memorable closing shot`;
+Scene Structure (MINIMUM 3 SCENES):
+- Scene 1 (0-2.5s): Powerful intro with dramatic character entrance or action pose
+- Scene 2 (2.5-5s): Dynamic action sequence with movement and energy effects
+- Scene 3 (5-8s): Epic finale with climactic pose or powerful visual impact
+
+Visual Elements:
+- Bold, stylized characters with idol aesthetics
+- Intense color palette (neons, purples, blues, pinks)
+- Motion blur and speed lines for dynamic movement
+- Particle effects and energy auras
+- Clean, impactful scene transitions`;
 
   try {
-    // Use the first slide as the reference image for the video
+    // Use the first slide as the reference for THEME only (not to show in video)
     const referenceSlide = selectedSlides[0];
     const mimeType = getMimeTypeFromDataUrl(referenceSlide.originalImage);
     const base64 = getBase64FromDataUrl(referenceSlide.originalImage);
