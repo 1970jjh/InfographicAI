@@ -339,35 +339,29 @@ export const generateVideoFromSlides = async (
   await ensureApiKey();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
-  const styleName = selectedStyle ? selectedStyle.name : 'Modern';
-  const styleDesc = selectedStyle ? selectedStyle.description : 'Professional and engaging visual style';
+  // Cinematic business movie style video prompt (NO animation, English only)
+  const videoPrompt = `Create an 8-second cinematic video based on the content from the provided slide images.
 
-  // Color instruction for video
-  const colorInstruction = config.selectedColor
-    ? `Color Theme: Use ${config.selectedColor} as the dominant color throughout the video.`
-    : 'Color Theme: Use vibrant and engaging colors appropriate for the content.';
-
-  // Create a detailed prompt for 8-second video with narrative structure
-  const videoPrompt = `Create an 8-second engaging animated video that presents the key information from the provided slide images.
-
-Language: ${config.language}
-Visual Style: ${styleName} - ${styleDesc}
-${colorInstruction}
-
-Video Requirements:
+IMPORTANT REQUIREMENTS:
+- Style: Business movie / Corporate documentary style (NO animation, NO cartoon, NO motion graphics)
+- Language: English ONLY (Do NOT use Korean or any other language)
+- Aspect Ratio: 16:9 widescreen cinematic format
 - Duration: Exactly 8 seconds
-- Create a compelling visual narrative that summarizes the slide content
-- Follow a clear narrative structure (기승전결):
-  * Opening (0-2s): Introduce the main topic with dynamic entrance animation
-  * Development (2-4s): Present core information with smooth transitions
-  * Climax (4-6s): Highlight the most important key points with emphasis
-  * Conclusion (6-8s): End with a memorable visual summary
-- Use smooth animations and transitions between concepts
-- Incorporate text overlays for key points in ${config.language}
-- Maintain consistent visual style throughout
-- Add subtle motion graphics to enhance engagement
-- Background should complement the overall theme`;
+
+Video Direction:
+- Use real-world cinematic visuals with professional cinematography
+- Apply dramatic lighting, shallow depth of field, and smooth camera movements
+- Create a professional business atmosphere like a corporate film or documentary
+- Include realistic scenes that represent the content: office environments, professionals working, business meetings, technology, or relevant real-world imagery
+- Use subtle, elegant transitions between scenes
+- Add minimal English text overlays only for key points (clean, professional typography)
+- Include cinematic color grading (professional, warm tones)
+- Background music style: Inspiring corporate/motivational (instrumental only)
+
+Narrative Structure:
+- Opening (0-2s): Establish the topic with an impactful cinematic shot
+- Development (2-5s): Present the core message through visual storytelling
+- Conclusion (5-8s): End with a powerful, memorable closing shot`;
 
   try {
     // Use the first slide as the reference image for the video
@@ -375,10 +369,7 @@ Video Requirements:
     const mimeType = getMimeTypeFromDataUrl(referenceSlide.originalImage);
     const base64 = getBase64FromDataUrl(referenceSlide.originalImage);
 
-    // Get appropriate aspect ratio based on size setting
-    const aspectRatio = mapSizeToVideoAspectRatio(config.sizeOption);
-
-    // Use the video generation API with Veo 2.0
+    // Use the video generation API with Veo 2.0 - Always 16:9
     const operation = await ai.models.generateVideos({
       model: VIDEO_MODEL_NAME,
       prompt: videoPrompt,
@@ -387,7 +378,7 @@ Video Requirements:
         mimeType: mimeType
       },
       config: {
-        aspectRatio: aspectRatio,
+        aspectRatio: '16:9',  // Always 16:9 cinematic
         numberOfVideos: 1,
         durationSeconds: 8,
         personGeneration: 'allow_adult'
