@@ -62,50 +62,45 @@ const App: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      const firstFile = files[0];
+      const allFiles = Array.from(files);
 
-      // Case 1: PDF (Single File Limit)
-      if (firstFile.type === 'application/pdf') {
-        if (files.length > 1) {
-          alert('PDF 파일은 한 번에 하나만 업로드할 수 있습니다.');
-          setIsProcessing(false);
-          e.target.value = '';
-          return;
-        }
-        const extractedSlides = await processFileToSlides(firstFile);
-        setSlides(extractedSlides);
-      }
-      // Case 2: Images (Multiple up to 20)
-      else if (firstFile.type.startsWith('image/')) {
-        const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      // Separate PDF and image files
+      const pdfFiles = allFiles.filter(f => f.type === 'application/pdf');
+      const imageFiles = allFiles.filter(f => f.type.startsWith('image/'));
 
-        if (imageFiles.length === 0) {
-           alert('지원되지 않는 파일 형식입니다.');
-           setIsProcessing(false);
-           return;
-        }
-
-        if (imageFiles.length > 20) {
-          alert('이미지는 한 번에 최대 20장까지만 업로드 가능합니다. 첫 20장만 처리됩니다.');
-          imageFiles.splice(20);
-        }
-
-        // Process all images
-        const results = await Promise.all(imageFiles.map(file => processFileToSlides(file)));
-        const allSlides = results.flat();
-
-        // Re-index slides sequentially
-        const reindexedSlides = allSlides.map((slide, idx) => ({
-            ...slide,
-            pageIndex: idx + 1
-        }));
-
-        setSlides(reindexedSlides);
-      } else {
+      // Check for unsupported files
+      const supportedCount = pdfFiles.length + imageFiles.length;
+      if (supportedCount === 0) {
         alert('지원되지 않는 파일 형식입니다. PDF 또는 이미지 파일을 선택해주세요.');
+        setIsProcessing(false);
+        e.target.value = '';
+        return;
       }
 
+      // Limit total files to 30
+      const totalFiles = [...pdfFiles, ...imageFiles];
+      if (totalFiles.length > 30) {
+        alert('파일은 한 번에 최대 30개까지만 업로드 가능합니다. 첫 30개만 처리됩니다.');
+        totalFiles.splice(30);
+      }
+
+      // Process all files (PDFs and images together)
+      const results = await Promise.all(totalFiles.map(file => processFileToSlides(file)));
+      const allSlides = results.flat();
+
+      // Re-index slides sequentially
+      const reindexedSlides = allSlides.map((slide, idx) => ({
+          ...slide,
+          pageIndex: idx + 1
+      }));
+
+      setSlides(reindexedSlides);
       setGeneratedImage(null);
+
+      // Show summary if mixed upload
+      if (pdfFiles.length > 0 && imageFiles.length > 0) {
+        console.log(`업로드 완료: PDF ${pdfFiles.length}개, 이미지 ${imageFiles.length}개 → 총 ${reindexedSlides.length}페이지`);
+      }
     } catch (error) {
       console.error(error);
       alert('파일 처리에 실패했습니다. PDF나 이미지 파일을 확인해주세요.');
