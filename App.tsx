@@ -77,7 +77,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Limit total files to 30
+      // Limit new files to 30 per upload
       const totalFiles = [...pdfFiles, ...imageFiles];
       if (totalFiles.length > 30) {
         alert('파일은 한 번에 최대 30개까지만 업로드 가능합니다. 첫 30개만 처리됩니다.');
@@ -86,20 +86,24 @@ const App: React.FC = () => {
 
       // Process all files (PDFs and images together)
       const results = await Promise.all(totalFiles.map(file => processFileToSlides(file)));
-      const allSlides = results.flat();
+      const newSlides = results.flat();
 
-      // Re-index slides sequentially
-      const reindexedSlides = allSlides.map((slide, idx) => ({
+      // Append new slides to existing slides and re-index all sequentially
+      setSlides(prev => {
+        const combinedSlides = [...prev, ...newSlides];
+        return combinedSlides.map((slide, idx) => ({
           ...slide,
           pageIndex: idx + 1
-      }));
-
-      setSlides(reindexedSlides);
+        }));
+      });
       setGeneratedImage(null);
 
-      // Show summary if mixed upload
-      if (pdfFiles.length > 0 && imageFiles.length > 0) {
-        console.log(`업로드 완료: PDF ${pdfFiles.length}개, 이미지 ${imageFiles.length}개 → 총 ${reindexedSlides.length}페이지`);
+      // Show summary
+      const existingCount = slides.length;
+      if (existingCount > 0) {
+        console.log(`추가 업로드: 기존 ${existingCount}페이지 + 새로운 ${newSlides.length}페이지`);
+      } else if (pdfFiles.length > 0 && imageFiles.length > 0) {
+        console.log(`업로드 완료: PDF ${pdfFiles.length}개, 이미지 ${imageFiles.length}개 → 총 ${newSlides.length}페이지`);
       }
     } catch (error) {
       console.error(error);
