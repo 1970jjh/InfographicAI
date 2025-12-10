@@ -339,40 +339,47 @@ export const generateVideoFromSlides = async (
   await ensureApiKey();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // K-pop Idol Animation Style video prompt (K-pop Demon Hunters style)
-  const videoPrompt = `Create an 8-second dynamic animated video in Korean idol animation style.
+  // Get selected design style
+  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
+  const styleName = selectedStyle ? selectedStyle.name : 'Modern';
+  const styleDesc = selectedStyle ? selectedStyle.description : 'Contemporary visual style';
+
+  // Dynamic video prompt based on selected design style
+  const videoPrompt = `Create an 8-second dynamic video.
 
 CRITICAL REQUIREMENTS:
-- DO NOT show or include the uploaded slide images in the video AT ALL
-- Instead, CREATE NEW animated visuals inspired by the TOPIC/THEME of the content
-- Style: K-pop Demon Hunters animation style (Korean idol aesthetic, vibrant, energetic)
-- Language: English text only if any text is needed
-- Aspect Ratio: 16:9 widescreen
-- Duration: Exactly 8 seconds
-- MINIMUM 3 DIFFERENT SCENES required
+1. ANALYZE the uploaded slide images to identify the MAIN TOPIC/THEME
+2. DO NOT show the uploaded slide images directly in the video
+3. CREATE NEW visuals that represent the main topic in the specified style
+4. Language: English text only (NO Korean)
+5. Aspect Ratio: 16:9 widescreen
+6. Duration: Exactly 8 seconds
+7. MINIMUM 3 DIFFERENT SCENES required
 
-Animation Style Direction:
-- Korean idol/K-pop animation aesthetic (like K-pop Demon Hunters, Stray Kids animations)
-- Vibrant neon colors, dynamic lighting effects, glowing elements
-- Fast-paced action sequences with dramatic poses
-- Stylish character movements with idol-like charisma
-- Cool visual effects: light trails, energy bursts, sparkles
-- Dynamic camera angles and fast cuts between scenes
+DESIGN STYLE TO APPLY: ${styleName}
+Style Description: ${styleDesc}
+
+Video Direction:
+- Create visuals that match the "${styleName}" era/style aesthetic
+- All characters, environments, costumes, architecture should reflect this style
+- Use period-appropriate colors, textures, and visual elements
+- Make it cinematic and visually stunning in this style
+- Dynamic camera movements and scene transitions
 
 Scene Structure (MINIMUM 3 SCENES):
-- Scene 1 (0-2.5s): Powerful intro with dramatic character entrance or action pose
-- Scene 2 (2.5-5s): Dynamic action sequence with movement and energy effects
-- Scene 3 (5-8s): Epic finale with climactic pose or powerful visual impact
+- Scene 1 (0-2.5s): Establish the topic with style-appropriate opening
+- Scene 2 (2.5-5s): Develop the main message with dynamic visuals
+- Scene 3 (5-8s): Powerful conclusion that reinforces the theme
 
-Visual Elements:
-- Bold, stylized characters with idol aesthetics
-- Intense color palette (neons, purples, blues, pinks)
-- Motion blur and speed lines for dynamic movement
-- Particle effects and energy auras
-- Clean, impactful scene transitions`;
+Examples by Style:
+- If "American Frontier Era": Cowboys, desert landscapes, wooden buildings, sepia tones
+- If "Joseon Dynasty": Traditional Korean architecture, hanbok, ink painting aesthetic
+- If "Renaissance": Classical European art style, ornate details, warm golden lighting
+- If "Industrial Revolution": Steam engines, factories, Victorian-era visuals
+- If "Ancient Egypt": Pyramids, pharaohs, hieroglyphics, golden desert tones`;
 
   try {
-    // Use the first slide as the reference for THEME only (not to show in video)
+    // Use the first slide as the reference for THEME extraction only
     const referenceSlide = selectedSlides[0];
     const mimeType = getMimeTypeFromDataUrl(referenceSlide.originalImage);
     const base64 = getBase64FromDataUrl(referenceSlide.originalImage);
