@@ -59,7 +59,7 @@ export const processFileToSlides = async (file: File): Promise<Slide[]> => {
             pageIndex: i,
             originalImage: dataUrl,
             currentImage: dataUrl,
-            selected: false,
+            selected: true, // Default to selected
             generatedCandidates: []
           };
         })()
