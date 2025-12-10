@@ -15,6 +15,8 @@ const getMimeTypeFromDataUrl = (dataUrl: string): string => {
 const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
 // Updated to Gemini 3.0 Pro for higher quality text reasoning as requested
 const TEXT_MODEL_NAME = 'gemini-3-pro-preview';
+// Veo 3.1 for video generation
+const VIDEO_MODEL_NAME = 'veo-3.1-generate-preview';
 
 export const ensureApiKey = async (): Promise<void> => {
   const win = window as any;
@@ -280,4 +282,99 @@ export const generateSlideVariations = async (
   const promises = Array.from({ length: count }).map(() => generateOne());
   const results = await Promise.all(promises);
   return results.filter((r): r is GeneratedImage => r !== null);
+};
+
+// Video Generation Result Interface
+export interface VideoGenerationResult {
+  videoUrl: string;
+  state: 'ACTIVE' | 'PENDING' | 'FAILED';
+}
+
+// Generate video from infographic using Veo 3.1
+export const generateVideoFromInfographic = async (
+  infographicImage: string,
+  config: GenerationConfig
+): Promise<VideoGenerationResult | null> => {
+  await ensureApiKey();
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
+  const styleName = selectedStyle ? selectedStyle.name : 'Modern';
+
+  // Create a detailed prompt for 8-second video with narrative structure
+  const videoPrompt = `Create an 8-second engaging video based on this infographic image.
+
+Style: ${styleName}
+Language: ${config.language}
+
+Video Requirements:
+- Duration: Exactly 8 seconds
+- The main character/presenter in the infographic should come alive and present the key information
+- Follow a clear narrative structure (기승전결):
+  * Opening (0-2s): Character introduces the topic with enthusiasm
+  * Development (2-4s): Explain the core concept with gestures and expressions
+  * Climax (4-6s): Highlight the most important point with emphasis
+  * Conclusion (6-8s): Summarize with a memorable closing statement
+- The character should speak naturally and make appropriate gestures
+- Background elements can subtly animate to enhance engagement
+- Maintain the visual style and color scheme of the original infographic
+- Keep text overlays minimal and impactful
+- Audio should include clear speech and subtle background music`;
+
+  try {
+    const mimeType = getMimeTypeFromDataUrl(infographicImage);
+    const base64 = getBase64FromDataUrl(infographicImage);
+
+    const response = await ai.models.generateContent({
+      model: VIDEO_MODEL_NAME,
+      contents: {
+        parts: [
+          { text: videoPrompt },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64
+            }
+          }
+        ]
+      },
+      config: {
+        generateAudio: true
+      }
+    });
+
+    // Check for video in response
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      console.error("No candidates in video response");
+      return null;
+    }
+
+    const resultParts = candidates[0].content.parts;
+    const videoPart = resultParts.find((p: any) => p.inlineData?.mimeType?.startsWith('video/'));
+
+    if (videoPart && videoPart.inlineData) {
+      const videoDataUrl = `data:${videoPart.inlineData.mimeType};base64,${videoPart.inlineData.data}`;
+      return {
+        videoUrl: videoDataUrl,
+        state: 'ACTIVE'
+      };
+    }
+
+    // Check for fileData (for larger videos returned as file reference)
+    const fileVideoPart = resultParts.find((p: any) => p.fileData?.mimeType?.startsWith('video/'));
+    if (fileVideoPart && fileVideoPart.fileData) {
+      return {
+        videoUrl: fileVideoPart.fileData.fileUri,
+        state: 'ACTIVE'
+      };
+    }
+
+    return null;
+
+  } catch (error: any) {
+    console.error("Video Generation Error:", error);
+    handleAuthError(error);
+    throw error;
+  }
 };
