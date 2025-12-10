@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Slide, GenerationConfig, GeneratedImage, AspectRatio, SlideContent } from "../types";
+import { Slide, GenerationConfig, GeneratedImage, AspectRatio } from "../types";
 import { INFOGRAPHIC_STYLES } from "../data/styles";
 
 // Helper to strip the data:image/jpeg;base64, prefix
@@ -147,68 +147,6 @@ export const generateInfographic = async (
   }
 };
 
-export const generateSlideContent = async (
-  selectedSlides: Slide[],
-  config: GenerationConfig
-): Promise<SlideContent | null> => {
-  await ensureApiKey();
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  const parts: any[] = [];
-  
-  const prompt = `Analyze the provided slide images and summarize the content into a structure suitable for a single presentation slide.
-  
-  Output Language: ${config.language}
-  
-  Return the result in JSON format with the following structure:
-  - title: A clear, engaging title for the summary slide.
-  - subtitle: A subtitle or tagline.
-  - bodyPoints: An array of 3-5 key bullet points summarizing the most important information.
-  - summary: A brief 1-2 sentence executive summary.
-  - footer: A suggestion for a footer text (e.g., department name or key takeaway).
-  `;
-
-  parts.push({ text: prompt });
-
-  selectedSlides.forEach((slide) => {
-    parts.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: getBase64FromDataUrl(slide.originalImage),
-      },
-    });
-  });
-
-  try {
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL_NAME,
-      contents: { parts },
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            subtitle: { type: Type.STRING },
-            bodyPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-            footer: { type: Type.STRING },
-            summary: { type: Type.STRING }
-          },
-          required: ['title', 'bodyPoints', 'summary']
-        }
-      }
-    });
-
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text) as SlideContent;
-
-  } catch (error: any) {
-    console.error("Slide Content Gen Error:", error);
-    handleAuthError(error);
-    throw error;
-  }
-};
 
 // Helper for auth error
 const handleAuthError = async (error: any) => {
@@ -290,9 +228,23 @@ export interface VideoGenerationResult {
   state: 'ACTIVE' | 'PENDING' | 'FAILED';
 }
 
-// Generate video from infographic using Veo 2.0
-export const generateVideoFromInfographic = async (
-  infographicImage: string,
+// Map size option to video aspect ratio
+const mapSizeToVideoAspectRatio = (sizeId: string): '16:9' | '9:16' => {
+  switch (sizeId) {
+    case 'mobile-story':
+    case 'webtoon-4':
+    case 'webtoon-8':
+    case 'long-scroll':
+    case 'a4-portrait':
+      return '9:16'; // Vertical
+    default:
+      return '16:9'; // Horizontal (default)
+  }
+};
+
+// Generate video directly from selected slides using Veo 2.0
+export const generateVideoFromSlides = async (
+  selectedSlides: Slide[],
   config: GenerationConfig
 ): Promise<VideoGenerationResult | null> => {
   await ensureApiKey();
@@ -300,32 +252,44 @@ export const generateVideoFromInfographic = async (
 
   const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
   const styleName = selectedStyle ? selectedStyle.name : 'Modern';
+  const styleDesc = selectedStyle ? selectedStyle.description : 'Professional and engaging visual style';
+
+  // Color instruction for video
+  const colorInstruction = config.selectedColor
+    ? `Color Theme: Use ${config.selectedColor} as the dominant color throughout the video.`
+    : 'Color Theme: Use vibrant and engaging colors appropriate for the content.';
 
   // Create a detailed prompt for 8-second video with narrative structure
-  const videoPrompt = `Create an 8-second engaging video based on this infographic image.
+  const videoPrompt = `Create an 8-second engaging animated video that presents the key information from the provided slide images.
 
-Style: ${styleName}
 Language: ${config.language}
+Visual Style: ${styleName} - ${styleDesc}
+${colorInstruction}
 
 Video Requirements:
 - Duration: Exactly 8 seconds
-- The main character/presenter in the infographic should come alive and present the key information
+- Create a compelling visual narrative that summarizes the slide content
 - Follow a clear narrative structure (기승전결):
-  * Opening (0-2s): Character introduces the topic with enthusiasm
-  * Development (2-4s): Explain the core concept with gestures and expressions
-  * Climax (4-6s): Highlight the most important point with emphasis
-  * Conclusion (6-8s): Summarize with a memorable closing statement
-- The character should speak naturally and make appropriate gestures
-- Background elements can subtly animate to enhance engagement
-- Maintain the visual style and color scheme of the original infographic
-- Keep text overlays minimal and impactful
-- Audio should include clear speech and subtle background music`;
+  * Opening (0-2s): Introduce the main topic with dynamic entrance animation
+  * Development (2-4s): Present core information with smooth transitions
+  * Climax (4-6s): Highlight the most important key points with emphasis
+  * Conclusion (6-8s): End with a memorable visual summary
+- Use smooth animations and transitions between concepts
+- Incorporate text overlays for key points in ${config.language}
+- Maintain consistent visual style throughout
+- Add subtle motion graphics to enhance engagement
+- Background should complement the overall theme`;
 
   try {
-    const mimeType = getMimeTypeFromDataUrl(infographicImage);
-    const base64 = getBase64FromDataUrl(infographicImage);
+    // Use the first slide as the reference image for the video
+    const referenceSlide = selectedSlides[0];
+    const mimeType = getMimeTypeFromDataUrl(referenceSlide.originalImage);
+    const base64 = getBase64FromDataUrl(referenceSlide.originalImage);
 
-    // Use the video generation API with correct method
+    // Get appropriate aspect ratio based on size setting
+    const aspectRatio = mapSizeToVideoAspectRatio(config.sizeOption);
+
+    // Use the video generation API with Veo 2.0
     const operation = await ai.models.generateVideos({
       model: VIDEO_MODEL_NAME,
       prompt: videoPrompt,
@@ -334,7 +298,7 @@ Video Requirements:
         mimeType: mimeType
       },
       config: {
-        aspectRatio: '16:9',
+        aspectRatio: aspectRatio,
         numberOfVideos: 1,
         durationSeconds: 8,
         personGeneration: 'allow_adult'
