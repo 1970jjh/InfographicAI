@@ -224,9 +224,98 @@ export const generateSlideVariations = async (
 
 // Video Generation Result Interface
 export interface VideoGenerationResult {
-  videoUrl: string;
+  videoUrl: string;  // Blob URL for playback
   state: 'ACTIVE' | 'PENDING' | 'FAILED';
 }
+
+// Helper to download video and convert to blob URL
+const downloadVideoAsBlob = async (
+  ai: GoogleGenAI,
+  videoUri: string
+): Promise<string | null> => {
+  try {
+    // Extract file name from URI (format: files/xxx or similar)
+    const fileNameMatch = videoUri.match(/files\/([^/]+)/);
+    if (!fileNameMatch) {
+      console.error("Could not extract file name from URI:", videoUri);
+      // Try direct fetch with API key as fallback
+      return await fetchVideoWithAuth(videoUri);
+    }
+
+    const fileName = `files/${fileNameMatch[1]}`;
+
+    // Download the video file using the Files API
+    const response = await ai.files.download({ file: fileName });
+
+    // Handle different response types
+    if (response) {
+      let blob: Blob;
+
+      // If response is already a Blob
+      if (response instanceof Blob) {
+        blob = response;
+      }
+      // If response is ArrayBuffer
+      else if (response instanceof ArrayBuffer) {
+        blob = new Blob([response], { type: 'video/mp4' });
+      }
+      // If response has arrayBuffer method (Response object)
+      else if (typeof (response as any).arrayBuffer === 'function') {
+        const arrayBuffer = await (response as any).arrayBuffer();
+        blob = new Blob([arrayBuffer], { type: 'video/mp4' });
+      }
+      // If response has data property (some SDK versions)
+      else if ((response as any).data) {
+        const data = (response as any).data;
+        if (typeof data === 'string') {
+          // Base64 encoded data
+          const binaryString = atob(data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          blob = new Blob([bytes], { type: 'video/mp4' });
+        } else {
+          blob = new Blob([data], { type: 'video/mp4' });
+        }
+      }
+      else {
+        // Try to convert whatever we got
+        blob = new Blob([response as any], { type: 'video/mp4' });
+      }
+
+      return URL.createObjectURL(blob);
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error downloading video:", error);
+    // Try direct fetch as fallback
+    return await fetchVideoWithAuth(videoUri);
+  }
+};
+
+// Fallback: fetch video with authenticated URL
+const fetchVideoWithAuth = async (videoUri: string): Promise<string | null> => {
+  try {
+    // Add API key to the URL if needed
+    const apiKey = process.env.API_KEY;
+    const separator = videoUri.includes('?') ? '&' : '?';
+    const authUrl = `${videoUri}${separator}key=${apiKey}`;
+
+    const response = await fetch(authUrl);
+    if (!response.ok) {
+      console.error("Failed to fetch video:", response.status, response.statusText);
+      return null;
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Error fetching video with auth:", error);
+    return null;
+  }
+};
 
 // Map size option to video aspect ratio
 const mapSizeToVideoAspectRatio = (sizeId: string): '16:9' | '9:16' => {
@@ -316,6 +405,17 @@ Video Requirements:
     if (result.response?.generatedVideos && result.response.generatedVideos.length > 0) {
       const video = result.response.generatedVideos[0];
       if (video.video?.uri) {
+        // Download the video and convert to blob URL for browser playback
+        const blobUrl = await downloadVideoAsBlob(ai, video.video.uri);
+        if (blobUrl) {
+          return {
+            videoUrl: blobUrl,
+            state: 'ACTIVE'
+          };
+        }
+
+        // Fallback: try direct URL if download fails
+        console.warn("Failed to download video, trying direct URL...");
         return {
           videoUrl: video.video.uri,
           state: 'ACTIVE'

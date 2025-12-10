@@ -333,13 +333,20 @@ const App: React.FC = () => {
                                 </>
                             )}
                             {generatedVideo && (
-                                <a
-                                   href={generatedVideo.videoUrl}
-                                   download="AI_Video.mp4"
+                                <button
+                                   onClick={() => {
+                                     // Create a temporary anchor to download the blob
+                                     const link = document.createElement('a');
+                                     link.href = generatedVideo.videoUrl;
+                                     link.download = 'AI_Video.mp4';
+                                     document.body.appendChild(link);
+                                     link.click();
+                                     document.body.removeChild(link);
+                                   }}
                                    className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-bold text-sm transition-all shadow-md hover:shadow-lg"
                                 >
                                    <Download className="w-4 h-4" /> 영상 다운로드
-                                </a>
+                                </button>
                             )}
                          </div>
                     </>
