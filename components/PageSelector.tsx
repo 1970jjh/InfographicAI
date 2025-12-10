@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Slide } from '../types';
-import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square } from 'lucide-react';
+import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square, Globe, Loader2 } from 'lucide-react';
 
 interface PageSelectorProps {
   slides: Slide[];
@@ -17,6 +17,10 @@ interface PageSelectorProps {
   // Select All/None Props
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  // URL Input Props
+  onUrlSubmit: (url: string) => void;
+  isUrlProcessing: boolean;
+  webContent: { title: string; content: string } | null;
 }
 
 export const PageSelector: React.FC<PageSelectorProps> = ({
@@ -31,10 +35,26 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   onLogin,
   onKeyPress,
   onSelectAll,
-  onDeselectAll
+  onDeselectAll,
+  onUrlSubmit,
+  isUrlProcessing,
+  webContent
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUrlSubmit = () => {
+    if (urlInput.trim()) {
+      onUrlSubmit(urlInput.trim());
+    }
+  };
+
+  const handleUrlKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isUrlProcessing) {
+      handleUrlSubmit();
+    }
+  };
 
   // Drag and Drop Handlers
   const handleDragEnter = (e: React.DragEvent) => {
@@ -164,6 +184,64 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
               disabled={isProcessing}
             />
           </label>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">또는</span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+          </div>
+
+          {/* URL Input Section */}
+          <div className="bg-emerald-50 dark:bg-slate-800 rounded-xl p-4 border border-emerald-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-3">
+              <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">웹페이지 URL</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyPress={handleUrlKeyPress}
+                placeholder="https://example.com"
+                disabled={isUrlProcessing}
+                className="flex-1 px-4 py-3 rounded-lg border text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white
+                  border-emerald-200 dark:border-slate-600 focus:ring-emerald-500
+                  focus:outline-none focus:ring-2 disabled:opacity-50"
+              />
+              <button
+                onClick={handleUrlSubmit}
+                disabled={isUrlProcessing || !urlInput.trim()}
+                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-700
+                  text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors
+                  disabled:cursor-not-allowed"
+              >
+                {isUrlProcessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Globe className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-emerald-600 dark:text-slate-400 mt-2">
+              웹페이지 내용을 분석하여 인포그래픽을 생성합니다
+            </p>
+          </div>
+
+          {/* Web Content Preview */}
+          {webContent && (
+            <div className="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-emerald-500 shadow-md">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">웹페이지 불러옴</span>
+              </div>
+              <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{webContent.title || '제목 없음'}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-3">
+                {webContent.content.substring(0, 200)}...
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 flex items-center justify-between">
              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">슬라이드 목록</h2>

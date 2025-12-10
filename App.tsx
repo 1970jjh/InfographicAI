@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 'lucide-react';
 import { Slide, GenerationConfig } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
-import { generateInfographic } from './services/geminiService';
+import { generateInfographic, generateFromWebContent } from './services/geminiService';
+import { fetchWebpageContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
 
@@ -44,6 +45,10 @@ const App: React.FC = () => {
   // Result State
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Web Content State
+  const [isUrlProcessing, setIsUrlProcessing] = useState(false);
+  const [webContent, setWebContent] = useState<{ title: string; content: string; url: string } | null>(null);
 
   // Dark Mode Effect
   useEffect(() => {
@@ -115,6 +120,34 @@ const App: React.FC = () => {
     }
   };
 
+  // URL Handler
+  const handleUrlSubmit = async (url: string) => {
+    setIsUrlProcessing(true);
+    setWebContent(null);
+
+    try {
+      const result = await fetchWebpageContent(url);
+
+      if (result.success && result.data) {
+        setWebContent({
+          title: result.data.title,
+          content: result.data.content,
+          url: result.data.url
+        });
+        // Clear slides when using URL mode
+        setSlides([]);
+        setGeneratedImage(null);
+      } else {
+        alert(result.error || '웹페이지를 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('URL fetch error:', error);
+      alert('웹페이지를 불러오는데 실패했습니다.');
+    } finally {
+      setIsUrlProcessing(false);
+    }
+  };
+
   const toggleSlideSelection = (id: string) => {
     setSlides(prev => prev.map(slide =>
       slide.id === id ? { ...slide, selected: !slide.selected } : slide
@@ -136,8 +169,10 @@ const App: React.FC = () => {
   // Infographic Generation Handler
   const handleGenerateInfographic = async () => {
     const selectedSlides = slides.filter(s => s.selected);
-    if (selectedSlides.length === 0) {
-        alert("최소 한 페이지 이상 선택해주세요.");
+
+    // Check if we have either slides or web content
+    if (selectedSlides.length === 0 && !webContent) {
+        alert("파일을 업로드하거나 웹페이지 URL을 입력해주세요.");
         return;
     }
 
@@ -145,7 +180,16 @@ const App: React.FC = () => {
     setGeneratedImage(null);
 
     try {
-      const resultUrl = await generateInfographic(selectedSlides, config);
+      let resultUrl: string | null = null;
+
+      if (webContent) {
+        // Generate from web content
+        resultUrl = await generateFromWebContent(webContent, config);
+      } else {
+        // Generate from slides
+        resultUrl = await generateInfographic(selectedSlides, config);
+      }
+
       if (resultUrl) {
         setGeneratedImage(resultUrl);
       } else {
@@ -213,6 +257,9 @@ const App: React.FC = () => {
               onKeyPress={handleKeyPress}
               onSelectAll={selectAllSlides}
               onDeselectAll={deselectAllSlides}
+              onUrlSubmit={handleUrlSubmit}
+              isUrlProcessing={isUrlProcessing}
+              webContent={webContent}
            />
         </aside>
 
@@ -264,16 +311,18 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                  <button
                     onClick={handleGenerateInfographic}
-                    disabled={isGenerating || slides.filter(s => s.selected).length === 0}
+                    disabled={isGenerating || (slides.filter(s => s.selected).length === 0 && !webContent)}
                     className={`
                        flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
                        ${isGenerating
                          ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
-                         : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
+                         : webContent
+                           ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700'
+                           : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
                     `}
                  >
                     <ImageIcon className="w-5 h-5" />
-                    인포그래픽 생성하기
+                    {webContent ? '웹페이지 인포그래픽 생성' : '인포그래픽 생성하기'}
                  </button>
               </div>
 
