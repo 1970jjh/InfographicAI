@@ -50,6 +50,13 @@ export const INFOGRAPHIC_STYLES: InfographicStyle[] = [
     previewImage: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=800&q=80'
   },
   {
+    id: 'spring-autumn-warring',
+    name: '중국 춘추전국시대 (Spring & Autumn)',
+    description: '청동기와 죽간, 제자백가의 사상이 담긴 고대 중국 스타일',
+    longDescription: '기원전 770년부터 221년까지의 춘추전국시대를 재현합니다. 청동기의 녹청색과 옥(玉)의 연녹색, 주홍색 인장을 기본 색상으로 하며, 전서체와 예서체의 고대 한자, 죽간(竹簡) 질감, 청동 무늬(도철문, 용문)를 활용합니다. 손자병법, 논어 등 제자백가의 지혜로운 분위기와 고대 중국의 웅장함을 표현합니다.',
+    previewImage: 'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?auto=format&fit=crop&w=800&q=80'
+  },
+  {
     id: 'ancient-greece-rome',
     name: '고대 그리스/로마 (Classical)',
     description: '대리석 기둥과 월계관, 클래식한 조각상 스타일의 고전주의',
