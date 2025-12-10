@@ -261,8 +261,25 @@ const App: React.FC = () => {
            {/* Bottom Action Bar */}
            <div className="h-24 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
 
-              {/* Left: Download Options */}
-              <div className="flex flex-col">
+              {/* Left: Generate Button */}
+              <div className="flex items-center gap-4">
+                 <button
+                    onClick={handleGenerateInfographic}
+                    disabled={isGenerating || slides.filter(s => s.selected).length === 0}
+                    className={`
+                       flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                       ${isGenerating
+                         ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                         : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
+                    `}
+                 >
+                    <ImageIcon className="w-5 h-5" />
+                    인포그래픽 생성하기
+                 </button>
+              </div>
+
+              {/* Right: Download Options */}
+              <div className="flex flex-col items-end">
                   {generatedImage ? (
                     <>
                          <span className="text-xs text-slate-400 font-medium mb-1">결과물 저장</span>
@@ -286,23 +303,6 @@ const App: React.FC = () => {
                           생성된 결과물이 여기에 표시됩니다.
                       </div>
                   )}
-              </div>
-
-              {/* Right: Generate Button */}
-              <div className="flex items-center gap-4">
-                 <button
-                    onClick={handleGenerateInfographic}
-                    disabled={isGenerating || slides.filter(s => s.selected).length === 0}
-                    className={`
-                       flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
-                       ${isGenerating
-                         ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
-                         : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
-                    `}
-                 >
-                    <ImageIcon className="w-5 h-5" />
-                    인포그래픽 생성하기
-                 </button>
               </div>
            </div>
         </section>
