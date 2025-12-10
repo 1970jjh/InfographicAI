@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Slide } from '../types';
-import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square, Globe, Loader2 } from 'lucide-react';
+import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square, Globe, Loader2, Youtube, Link } from 'lucide-react';
 
 interface PageSelectorProps {
   slides: Slide[];
@@ -20,7 +20,13 @@ interface PageSelectorProps {
   // URL Input Props
   onUrlSubmit: (url: string) => void;
   isUrlProcessing: boolean;
-  webContent: { title: string; content: string } | null;
+  webContent: {
+    title: string;
+    content: string;
+    type: 'webpage' | 'youtube';
+    author?: string;
+    thumbnail?: string;
+  } | null;
 }
 
 export const PageSelector: React.FC<PageSelectorProps> = ({
@@ -193,10 +199,11 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           </div>
 
           {/* URL Input Section */}
-          <div className="bg-emerald-50 dark:bg-slate-800 rounded-xl p-4 border border-emerald-200 dark:border-slate-700">
+          <div className="bg-gradient-to-br from-emerald-50 to-red-50 dark:bg-slate-800 rounded-xl p-4 border border-emerald-200 dark:border-slate-700">
             <div className="flex items-center gap-2 mb-3">
-              <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">웹페이지 URL</span>
+              <Link className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">웹페이지 / 유튜브 URL</span>
+              <Youtube className="w-4 h-4 text-red-500" />
             </div>
             <div className="flex gap-2">
               <input
@@ -204,39 +211,58 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyPress={handleUrlKeyPress}
-                placeholder="https://example.com"
+                placeholder="https://example.com 또는 유튜브 링크"
                 disabled={isUrlProcessing}
                 className="flex-1 px-4 py-3 rounded-lg border text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                  border-emerald-200 dark:border-slate-600 focus:ring-emerald-500
+                  border-slate-300 dark:border-slate-600 focus:ring-blue-500
                   focus:outline-none focus:ring-2 disabled:opacity-50"
               />
               <button
                 onClick={handleUrlSubmit}
                 disabled={isUrlProcessing || !urlInput.trim()}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-700
+                className="px-4 py-3 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-300 dark:disabled:bg-slate-700
                   text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors
                   disabled:cursor-not-allowed"
               >
                 {isUrlProcessing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Globe className="w-4 h-4" />
+                  <Link className="w-4 h-4" />
                 )}
               </button>
             </div>
-            <p className="text-xs text-emerald-600 dark:text-slate-400 mt-2">
-              웹페이지 내용을 분석하여 인포그래픽을 생성합니다
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              웹페이지 또는 유튜브 영상 내용을 분석하여 인포그래픽 생성
             </p>
           </div>
 
-          {/* Web Content Preview */}
+          {/* Web/YouTube Content Preview */}
           {webContent && (
-            <div className="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-emerald-500 shadow-md">
+            <div className={`mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 border-2 shadow-md ${
+              webContent.type === 'youtube' ? 'border-red-500' : 'border-emerald-500'
+            }`}>
               <div className="flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">웹페이지 불러옴</span>
+                {webContent.type === 'youtube' ? (
+                  <>
+                    <Youtube className="w-4 h-4 text-red-500" />
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400">유튜브 영상 불러옴</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">웹페이지 불러옴</span>
+                  </>
+                )}
               </div>
+              {webContent.thumbnail && webContent.type === 'youtube' && (
+                <div className="mb-3 rounded-lg overflow-hidden">
+                  <img src={webContent.thumbnail} alt="Thumbnail" className="w-full h-auto object-cover" />
+                </div>
+              )}
               <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{webContent.title || '제목 없음'}</h3>
+              {webContent.author && (
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">채널: {webContent.author}</p>
+              )}
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-3">
                 {webContent.content.substring(0, 200)}...
               </p>
