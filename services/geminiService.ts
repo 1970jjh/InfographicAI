@@ -13,10 +13,6 @@ const getMimeTypeFromDataUrl = (dataUrl: string): string => {
 };
 
 const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
-// Updated to Gemini 3.0 Pro for higher quality text reasoning as requested
-const TEXT_MODEL_NAME = 'gemini-3-pro-preview';
-// Veo 2.0 for video generation (Image-to-Video)
-const VIDEO_MODEL_NAME = 'veo-2.0-generate-001';
 
 export const ensureApiKey = async (): Promise<void> => {
   const win = window as any;
@@ -63,7 +59,7 @@ export const generateInfographic = async (
   selectedSlides: Slide[],
   config: GenerationConfig
 ): Promise<string | null> => {
-  
+
   await ensureApiKey();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -73,20 +69,20 @@ export const generateInfographic = async (
   const styleName = selectedStyle ? selectedStyle.name : 'Custom';
   const styleDesc = selectedStyle ? selectedStyle.description : 'Match the reference image style.';
   const sizeInstruction = getSizeInstruction(config.sizeOption);
-  
+
   // Color Instruction
-  const colorInstruction = config.selectedColor 
+  const colorInstruction = config.selectedColor
     ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
     : "Color Palette: Auto-detect the best color scheme based on the content and style.";
 
   let prompt = `Create a single, high-quality, professional infographic that summarizes the key information from the provided slide images.
-  
+
   Language: ${config.language}
   Style: ${styleName}
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
-  
+
   Instructions:
   - Combine the content from the input slides into one cohesive narrative within a single image.
   - Use the specified language for all text.
@@ -152,10 +148,10 @@ export const generateInfographic = async (
 const handleAuthError = async (error: any) => {
    const errorMessage = error.message || error.toString();
    const win = window as any;
-   
+
    if (
-      errorMessage.includes('403') || 
-      errorMessage.includes('PERMISSION_DENIED') || 
+      errorMessage.includes('403') ||
+      errorMessage.includes('PERMISSION_DENIED') ||
       errorMessage.includes('Requested entity was not found')
     ) {
        if (win.aistudio) {
@@ -183,7 +179,7 @@ export const generateSlideVariations = async (
              contents: {
                  parts: [
                      { text: prompt },
-                     { 
+                     {
                          inlineData: {
                              mimeType: mimeType,
                              data: base64
@@ -198,10 +194,10 @@ export const generateSlideVariations = async (
                  }
              }
          });
-         
+
          const parts = response.candidates?.[0]?.content?.parts;
          const imagePart = parts?.find(p => p.inlineData);
-         
+
          if (imagePart && imagePart.inlineData) {
              return {
                  id: crypto.randomUUID(),
@@ -220,220 +216,4 @@ export const generateSlideVariations = async (
   const promises = Array.from({ length: count }).map(() => generateOne());
   const results = await Promise.all(promises);
   return results.filter((r): r is GeneratedImage => r !== null);
-};
-
-// Video Generation Result Interface
-export interface VideoGenerationResult {
-  videoUrl: string;  // Blob URL for playback
-  state: 'ACTIVE' | 'PENDING' | 'FAILED';
-}
-
-// Helper to download video and convert to blob URL
-const downloadVideoAsBlob = async (
-  ai: GoogleGenAI,
-  videoUri: string
-): Promise<string | null> => {
-  try {
-    // Extract file name from URI (format: files/xxx or similar)
-    const fileNameMatch = videoUri.match(/files\/([^/]+)/);
-    if (!fileNameMatch) {
-      console.error("Could not extract file name from URI:", videoUri);
-      // Try direct fetch with API key as fallback
-      return await fetchVideoWithAuth(videoUri);
-    }
-
-    const fileName = `files/${fileNameMatch[1]}`;
-
-    // Download the video file using the Files API
-    const response = await ai.files.download({ file: fileName });
-
-    // Handle different response types
-    if (response) {
-      let blob: Blob;
-
-      // If response is already a Blob
-      if (response instanceof Blob) {
-        blob = response;
-      }
-      // If response is ArrayBuffer
-      else if (response instanceof ArrayBuffer) {
-        blob = new Blob([response], { type: 'video/mp4' });
-      }
-      // If response has arrayBuffer method (Response object)
-      else if (typeof (response as any).arrayBuffer === 'function') {
-        const arrayBuffer = await (response as any).arrayBuffer();
-        blob = new Blob([arrayBuffer], { type: 'video/mp4' });
-      }
-      // If response has data property (some SDK versions)
-      else if ((response as any).data) {
-        const data = (response as any).data;
-        if (typeof data === 'string') {
-          // Base64 encoded data
-          const binaryString = atob(data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          blob = new Blob([bytes], { type: 'video/mp4' });
-        } else {
-          blob = new Blob([data], { type: 'video/mp4' });
-        }
-      }
-      else {
-        // Try to convert whatever we got
-        blob = new Blob([response as any], { type: 'video/mp4' });
-      }
-
-      return URL.createObjectURL(blob);
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Error downloading video:", error);
-    // Try direct fetch as fallback
-    return await fetchVideoWithAuth(videoUri);
-  }
-};
-
-// Fallback: fetch video with authenticated URL
-const fetchVideoWithAuth = async (videoUri: string): Promise<string | null> => {
-  try {
-    // Add API key to the URL if needed
-    const apiKey = process.env.API_KEY;
-    const separator = videoUri.includes('?') ? '&' : '?';
-    const authUrl = `${videoUri}${separator}key=${apiKey}`;
-
-    const response = await fetch(authUrl);
-    if (!response.ok) {
-      console.error("Failed to fetch video:", response.status, response.statusText);
-      return null;
-    }
-
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-  } catch (error) {
-    console.error("Error fetching video with auth:", error);
-    return null;
-  }
-};
-
-// Map size option to video aspect ratio
-const mapSizeToVideoAspectRatio = (sizeId: string): '16:9' | '9:16' => {
-  switch (sizeId) {
-    case 'mobile-story':
-    case 'webtoon-4':
-    case 'webtoon-8':
-    case 'long-scroll':
-    case 'a4-portrait':
-      return '9:16'; // Vertical
-    default:
-      return '16:9'; // Horizontal (default)
-  }
-};
-
-// Generate video directly from selected slides using Veo 2.0
-export const generateVideoFromSlides = async (
-  selectedSlides: Slide[],
-  config: GenerationConfig
-): Promise<VideoGenerationResult | null> => {
-  await ensureApiKey();
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  // Get selected design style
-  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
-  const styleName = selectedStyle ? selectedStyle.name : 'Modern';
-  const styleDesc = selectedStyle ? selectedStyle.description : 'Contemporary visual style';
-
-  // Dynamic video prompt based on selected design style
-  const videoPrompt = `Create an 8-second dynamic video.
-
-CRITICAL REQUIREMENTS:
-1. ANALYZE the uploaded slide images to identify the MAIN TOPIC/THEME
-2. DO NOT show the uploaded slide images directly in the video
-3. CREATE NEW visuals that represent the main topic in the specified style
-4. Language: English text only (NO Korean)
-5. Aspect Ratio: 16:9 widescreen
-6. Duration: Exactly 8 seconds
-7. MINIMUM 3 DIFFERENT SCENES required
-
-DESIGN STYLE TO APPLY: ${styleName}
-Style Description: ${styleDesc}
-
-Video Direction:
-- Create visuals that match the "${styleName}" era/style aesthetic
-- All characters, environments, costumes, architecture should reflect this style
-- Use period-appropriate colors, textures, and visual elements
-- Make it cinematic and visually stunning in this style
-- Dynamic camera movements and scene transitions
-
-Scene Structure (MINIMUM 3 SCENES):
-- Scene 1 (0-2.5s): Establish the topic with style-appropriate opening
-- Scene 2 (2.5-5s): Develop the main message with dynamic visuals
-- Scene 3 (5-8s): Powerful conclusion that reinforces the theme
-
-Examples by Style:
-- If "American Frontier Era": Cowboys, desert landscapes, wooden buildings, sepia tones
-- If "Joseon Dynasty": Traditional Korean architecture, hanbok, ink painting aesthetic
-- If "Renaissance": Classical European art style, ornate details, warm golden lighting
-- If "Industrial Revolution": Steam engines, factories, Victorian-era visuals
-- If "Ancient Egypt": Pyramids, pharaohs, hieroglyphics, golden desert tones`;
-
-  try {
-    // Use the first slide as the reference for THEME extraction only
-    const referenceSlide = selectedSlides[0];
-    const mimeType = getMimeTypeFromDataUrl(referenceSlide.originalImage);
-    const base64 = getBase64FromDataUrl(referenceSlide.originalImage);
-
-    // Use the video generation API with Veo 2.0 - Always 16:9
-    const operation = await ai.models.generateVideos({
-      model: VIDEO_MODEL_NAME,
-      prompt: videoPrompt,
-      image: {
-        imageBytes: base64,
-        mimeType: mimeType
-      },
-      config: {
-        aspectRatio: '16:9',  // Always 16:9 cinematic
-        numberOfVideos: 1,
-        durationSeconds: 8,
-        personGeneration: 'allow_adult'
-      }
-    });
-
-    // Poll for completion
-    let result = operation;
-    while (!result.done) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      result = await ai.operations.get({ operation: result });
-    }
-
-    // Check for video in response
-    if (result.response?.generatedVideos && result.response.generatedVideos.length > 0) {
-      const video = result.response.generatedVideos[0];
-      if (video.video?.uri) {
-        // Download the video and convert to blob URL for browser playback
-        const blobUrl = await downloadVideoAsBlob(ai, video.video.uri);
-        if (blobUrl) {
-          return {
-            videoUrl: blobUrl,
-            state: 'ACTIVE'
-          };
-        }
-
-        // Fallback: try direct URL if download fails
-        console.warn("Failed to download video, trying direct URL...");
-        return {
-          videoUrl: video.video.uri,
-          state: 'ACTIVE'
-        };
-      }
-    }
-
-    return null;
-
-  } catch (error: any) {
-    console.error("Video Generation Error:", error);
-    handleAuthError(error);
-    throw error;
-  }
 };

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun, Lock, LogIn, Video, Play } from 'lucide-react';
+import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 'lucide-react';
 import { Slide, GenerationConfig } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
-import { generateInfographic, generateVideoFromSlides, VideoGenerationResult } from './services/geminiService';
+import { generateInfographic } from './services/geminiService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
 
@@ -44,10 +44,6 @@ const App: React.FC = () => {
   // Result State
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  // Video Generation State
-  const [generatedVideo, setGeneratedVideo] = useState<VideoGenerationResult | null>(null);
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
   // Dark Mode Effect
   useEffect(() => {
@@ -110,7 +106,6 @@ const App: React.FC = () => {
       }
 
       setGeneratedImage(null);
-      setGeneratedVideo(null);
     } catch (error) {
       console.error(error);
       alert('파일 처리에 실패했습니다. PDF나 이미지 파일을 확인해주세요.');
@@ -149,7 +144,6 @@ const App: React.FC = () => {
 
     setIsGenerating(true);
     setGeneratedImage(null);
-    setGeneratedVideo(null);
 
     try {
       const resultUrl = await generateInfographic(selectedSlides, config);
@@ -166,33 +160,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Video Generation Handler - directly from selected slides
-  const handleGenerateVideo = async () => {
-    const selectedSlides = slides.filter(s => s.selected);
-    if (selectedSlides.length === 0) {
-        alert("최소 한 페이지 이상 선택해주세요.");
-        return;
-    }
-
-    setIsGeneratingVideo(true);
-    setGeneratedImage(null);
-    setGeneratedVideo(null);
-
-    try {
-      const result = await generateVideoFromSlides(selectedSlides, config);
-      if (result) {
-        setGeneratedVideo(result);
-      } else {
-        alert("동영상 생성에 실패했습니다.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("동영상 생성 중 오류가 발생했습니다.");
-    } finally {
-      setIsGeneratingVideo(false);
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Header */}
@@ -205,7 +172,7 @@ const App: React.FC = () => {
                 <h1 className="font-bold text-xl tracking-tight leading-none text-slate-900 dark:text-white">
                   인포그래픽 <span className="text-blue-600 dark:text-blue-400">AI</span>
                 </h1>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gemini 3.0 Pro + Veo 2.0</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gemini 3.0 Pro</p>
              </div>
          </div>
 
@@ -260,34 +227,18 @@ const App: React.FC = () => {
 
            {/* Canvas Area */}
            <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
-              {(isGenerating || isGeneratingVideo) ? (
+              {isGenerating ? (
                   <div className="text-center p-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
                      <div className="relative w-20 h-20 mx-auto mb-6">
                         <div className="absolute inset-0 border-4 border-slate-200 dark:border-slate-700 rounded-full"></div>
-                        <div className={`absolute inset-0 border-4 rounded-full border-t-transparent animate-spin ${isGeneratingVideo ? 'border-pink-600 dark:border-pink-500' : 'border-blue-600 dark:border-blue-500'}`}></div>
+                        <div className="absolute inset-0 border-4 rounded-full border-t-transparent animate-spin border-blue-600 dark:border-blue-500"></div>
                      </div>
                      <h2 className="text-2xl font-bold text-slate-800 dark:text-white animate-pulse mb-2">
-                         {isGeneratingVideo ? '동영상 생성 중...' : '이미지 생성 중...'}
+                         이미지 생성 중...
                      </h2>
                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                         {isGeneratingVideo
-                           ? 'Veo 2.0이 8초 영상을 제작하고 있습니다. 잠시만 기다려주세요...'
-                           : 'Gemini 3.0 Pro가 디자인을 그리고 있습니다.'}
+                         Gemini 3.0 Pro가 디자인을 그리고 있습니다.
                      </p>
-                  </div>
-              ) : generatedVideo ? (
-                  <div className="relative w-full h-full flex flex-col items-center justify-center gap-4">
-                      <video
-                        src={generatedVideo.videoUrl}
-                        controls
-                        autoPlay
-                        loop
-                        className="max-w-full max-h-[70vh] object-contain shadow-2xl rounded-lg bg-black"
-                      />
-                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                        <Play className="w-4 h-4" />
-                        <span>8초 AI 생성 영상</span>
-                      </div>
                   </div>
               ) : generatedImage ? (
                   <div className="relative w-full h-full flex items-center justify-center group">
@@ -312,42 +263,22 @@ const App: React.FC = () => {
 
               {/* Left: Download Options */}
               <div className="flex flex-col">
-                  {(generatedImage || generatedVideo) ? (
+                  {generatedImage ? (
                     <>
                          <span className="text-xs text-slate-400 font-medium mb-1">결과물 저장</span>
                          <div className="flex gap-3">
-                            {generatedImage && (
-                                <>
-                                    <button
-                                       onClick={() => generatedImage && saveImageToPdf(generatedImage, 'Infographic.pdf')}
-                                       className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors"
-                                    >
-                                       <Download className="w-4 h-4" /> PDF
-                                    </button>
-                                    <button
-                                       onClick={() => generatedImage && saveImageToPptx(generatedImage, 'Infographic.pptx')}
-                                       className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg font-bold text-sm transition-colors"
-                                    >
-                                       <Presentation className="w-4 h-4" /> PPTX
-                                    </button>
-                                </>
-                            )}
-                            {generatedVideo && (
-                                <button
-                                   onClick={() => {
-                                     // Create a temporary anchor to download the blob
-                                     const link = document.createElement('a');
-                                     link.href = generatedVideo.videoUrl;
-                                     link.download = 'AI_Video.mp4';
-                                     document.body.appendChild(link);
-                                     link.click();
-                                     document.body.removeChild(link);
-                                   }}
-                                   className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-bold text-sm transition-all shadow-md hover:shadow-lg"
-                                >
-                                   <Download className="w-4 h-4" /> 영상 다운로드
-                                </button>
-                            )}
+                            <button
+                               onClick={() => generatedImage && saveImageToPdf(generatedImage, 'Infographic.pdf')}
+                               className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors"
+                            >
+                               <Download className="w-4 h-4" /> PDF
+                            </button>
+                            <button
+                               onClick={() => generatedImage && saveImageToPptx(generatedImage, 'Infographic.pptx')}
+                               className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg font-bold text-sm transition-colors"
+                            >
+                               <Presentation className="w-4 h-4" /> PPTX
+                            </button>
                          </div>
                     </>
                   ) : (
@@ -357,37 +288,20 @@ const App: React.FC = () => {
                   )}
               </div>
 
-              {/* Right: Generate Buttons */}
+              {/* Right: Generate Button */}
               <div className="flex items-center gap-4">
-
-                 {/* Infographic Button */}
                  <button
                     onClick={handleGenerateInfographic}
-                    disabled={isGenerating || isGeneratingVideo || slides.filter(s => s.selected).length === 0}
+                    disabled={isGenerating || slides.filter(s => s.selected).length === 0}
                     className={`
                        flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
-                       ${(isGenerating || isGeneratingVideo)
+                       ${isGenerating
                          ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
                     `}
                  >
                     <ImageIcon className="w-5 h-5" />
                     인포그래픽 생성하기
-                 </button>
-
-                 {/* Video Generation Button */}
-                 <button
-                    onClick={handleGenerateVideo}
-                    disabled={isGenerating || isGeneratingVideo || slides.filter(s => s.selected).length === 0}
-                    className={`
-                       flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
-                       ${(isGenerating || isGeneratingVideo)
-                         ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
-                         : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600'}
-                    `}
-                 >
-                    <Video className="w-5 h-5" />
-                    동영상 생성하기
                  </button>
               </div>
            </div>
