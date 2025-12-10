@@ -3,7 +3,7 @@ import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 
 import { Slide, GenerationConfig } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
 import { generateInfographic, generateFromWebContent } from './services/geminiService';
-import { fetchWebpageContent, WebPageContent } from './services/webService';
+import { fetchUrlContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
 
@@ -48,7 +48,14 @@ const App: React.FC = () => {
 
   // Web Content State
   const [isUrlProcessing, setIsUrlProcessing] = useState(false);
-  const [webContent, setWebContent] = useState<{ title: string; content: string; url: string } | null>(null);
+  const [webContent, setWebContent] = useState<{
+    title: string;
+    content: string;
+    url: string;
+    type: 'webpage' | 'youtube';
+    author?: string;
+    thumbnail?: string;
+  } | null>(null);
 
   // Dark Mode Effect
   useEffect(() => {
@@ -120,29 +127,32 @@ const App: React.FC = () => {
     }
   };
 
-  // URL Handler
+  // URL Handler (supports both webpage and YouTube)
   const handleUrlSubmit = async (url: string) => {
     setIsUrlProcessing(true);
     setWebContent(null);
 
     try {
-      const result = await fetchWebpageContent(url);
+      const result = await fetchUrlContent(url);
 
       if (result.success && result.data) {
         setWebContent({
           title: result.data.title,
           content: result.data.content,
-          url: result.data.url
+          url: result.data.url,
+          type: result.data.type,
+          author: result.data.author,
+          thumbnail: result.data.thumbnail
         });
         // Clear slides when using URL mode
         setSlides([]);
         setGeneratedImage(null);
       } else {
-        alert(result.error || '웹페이지를 불러오는데 실패했습니다.');
+        alert(result.error || 'URL 콘텐츠를 불러오는데 실패했습니다.');
       }
     } catch (error) {
       console.error('URL fetch error:', error);
-      alert('웹페이지를 불러오는데 실패했습니다.');
+      alert('URL 콘텐츠를 불러오는데 실패했습니다.');
     } finally {
       setIsUrlProcessing(false);
     }
@@ -316,13 +326,19 @@ const App: React.FC = () => {
                        flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
                        ${isGenerating
                          ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
-                         : webContent
-                           ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700'
-                           : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
+                         : webContent?.type === 'youtube'
+                           ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700'
+                           : webContent
+                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700'
+                             : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
                     `}
                  >
                     <ImageIcon className="w-5 h-5" />
-                    {webContent ? '웹페이지 인포그래픽 생성' : '인포그래픽 생성하기'}
+                    {webContent?.type === 'youtube'
+                      ? '유튜브 인포그래픽 생성'
+                      : webContent
+                        ? '웹페이지 인포그래픽 생성'
+                        : '인포그래픽 생성하기'}
                  </button>
               </div>
 
