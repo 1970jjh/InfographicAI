@@ -1,15 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Wand2, Download, RefreshCcw, FileText, Presentation, LayoutTemplate, Image as ImageIcon, Moon, Sun } from 'lucide-react';
+import { Loader2, Wand2, Download, RefreshCcw, FileText, Presentation, LayoutTemplate, Image as ImageIcon, Moon, Sun, Lock, LogIn } from 'lucide-react';
 import { Slide, GenerationConfig, SlideContent, GenerationMode } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx, createEditablePresentation } from './services/pdfService';
 import { generateInfographic, generateSlideContent } from './services/geminiService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
 
+const ADMIN_PASSWORD = '6749467';
+
 const App: React.FC = () => {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  // Admin Login State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
+  const handleLogin = () => {
+    if (password === ADMIN_PASSWORD) {
+      setIsLoggedIn(true);
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  };
   
   // Generation Configuration State
   const [config, setConfig] = useState<GenerationConfig>({
@@ -98,9 +120,17 @@ const App: React.FC = () => {
   };
 
   const toggleSlideSelection = (id: string) => {
-    setSlides(prev => prev.map(slide => 
+    setSlides(prev => prev.map(slide =>
       slide.id === id ? { ...slide, selected: !slide.selected } : slide
     ));
+  };
+
+  const selectAllSlides = () => {
+    setSlides(prev => prev.map(slide => ({ ...slide, selected: true })));
+  };
+
+  const deselectAllSlides = () => {
+    setSlides(prev => prev.map(slide => ({ ...slide, selected: false })));
   };
 
   const updateConfig = (newConfig: Partial<GenerationConfig>) => {
@@ -188,11 +218,19 @@ const App: React.FC = () => {
         
         {/* Left Column: Source (400px fixed) */}
         <aside className="w-[400px] shrink-0 h-full z-10 shadow-lg relative bg-white dark:bg-slate-900">
-           <PageSelector 
-              slides={slides} 
-              onToggleSlide={toggleSlideSelection} 
+           <PageSelector
+              slides={slides}
+              onToggleSlide={toggleSlideSelection}
               onFileUpload={handleFileUpload}
               isProcessing={isProcessing}
+              isLoggedIn={isLoggedIn}
+              password={password}
+              loginError={loginError}
+              onPasswordChange={setPassword}
+              onLogin={handleLogin}
+              onKeyPress={handleKeyPress}
+              onSelectAll={selectAllSlides}
+              onDeselectAll={deselectAllSlides}
            />
         </aside>
 

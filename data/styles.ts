@@ -34,6 +34,65 @@ export const COLOR_OPTIONS: ColorOption[] = [
 ];
 
 export const INFOGRAPHIC_STYLES: InfographicStyle[] = [
+  // ========== 역사적 시대 스타일 (연대기순) ==========
+  {
+    id: 'paleolithic',
+    name: '구석기 시대 (Paleolithic)',
+    description: '동굴 벽화와 원시적인 그림체로 표현하는 태초의 스타일',
+    longDescription: '약 250만년 전부터 1만년 전까지의 구석기 시대를 재현합니다. 라스코 동굴벽화에서 영감을 받은 거친 질감의 암벽 배경, 황토색과 검정, 붉은 오커 색상의 원시적인 손그림 스타일로 정보를 표현합니다. 동물 그림, 사냥 장면, 손도장 모티프 등을 활용하여 원초적이면서도 독특한 비주얼을 만들어냅니다.',
+    previewImage: 'https://images.unsplash.com/photo-1505322022379-7c3353ee6291?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'ancient-egypt',
+    name: '고대 이집트 (Ancient Egypt)',
+    description: '파라오와 피라미드, 히에로글리프가 어우러진 신비로운 스타일',
+    longDescription: '약 3000년간 찬란했던 고대 이집트 문명을 담아냅니다. 금색과 청금석 블루, 사막의 모래색을 기본으로 하며, 이집트 특유의 측면 인물화, 히에로글리프 장식, 피라미드와 스핑크스 모티프를 활용합니다. 파피루스 질감의 배경과 태양신 라(Ra)를 연상시키는 방사형 디자인이 특징입니다.',
+    previewImage: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'ancient-greece-rome',
+    name: '고대 그리스/로마 (Classical)',
+    description: '대리석 기둥과 월계관, 클래식한 조각상 스타일의 고전주의',
+    longDescription: '서양 문명의 뿌리인 고대 그리스와 로마의 미학을 반영합니다. 대리석 흰색과 올리브 그린, 테라코타 색상을 사용하며, 이오니아/코린트 양식의 기둥, 월계관 장식, 암포라 무늬 등을 배치합니다. 균형과 비례를 중시하는 고전주의적 레이아웃으로 권위 있고 지적인 느낌을 줍니다.',
+    previewImage: 'https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'medieval-europe',
+    name: '유럽 중세시대 (Medieval)',
+    description: '기사와 성, 스테인드글라스와 문장(紋章)이 어우러진 중세 판타지',
+    longDescription: '5세기부터 15세기까지의 유럽 중세 시대를 표현합니다. 진한 보라색, 진홍색, 금색의 로얄 컬러를 사용하고, 고딕 양식의 아치와 스테인드글라스 패턴, 가문의 문장(Coat of Arms), 필사본 장식(Illuminated Manuscript) 스타일의 화려한 테두리를 활용합니다. 신비롭고 판타지적인 분위기를 자아냅니다.',
+    previewImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'renaissance',
+    name: '르네상스 (Renaissance)',
+    description: '레오나르도 다빈치 스케치와 미켈란젤로 프레스코화 스타일',
+    longDescription: '14~16세기 이탈리아에서 꽃피운 르네상스 예술을 재현합니다. 다빈치의 세피아톤 스케치, 보티첼리의 부드러운 색감, 미켈란젤로의 웅장한 구도를 참조합니다. 해부학적 드로잉, 원근법을 활용한 건축 배경, 고전적인 세리프 타이포그래피로 예술적 깊이와 인문학적 교양을 표현합니다.',
+    previewImage: 'https://images.unsplash.com/photo-1544413660-299165566b1d?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'joseon-dynasty',
+    name: '조선시대 (Joseon Dynasty)',
+    description: '민화와 한지, 붓글씨가 어우러진 동양적 고전미',
+    longDescription: '1392년부터 1897년까지 500년 조선의 미학을 담습니다. 한지 질감의 배경 위에 민화 스타일의 일러스트레이션, 수묵화 기법, 전통 오방색을 사용합니다. 궁궐 단청 문양, 십장생, 사군자 등의 전통 모티프와 세로쓰기 서예체를 활용하여 품격 있고 한국적인 아름다움을 표현합니다.',
+    previewImage: 'https://images.unsplash.com/photo-1548115184-bc6544d06a58?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'industrial-revolution',
+    name: '영국 산업혁명 (Industrial Revolution)',
+    description: '증기기관과 톱니바퀴, 빅토리아 시대의 스팀펑크 감성',
+    longDescription: '18세기 후반 영국에서 시작된 산업혁명 시대를 표현합니다. 구리색, 황동색, 그을린 철의 색감을 기본으로 하며, 톱니바퀴, 증기기관, 공장 굴뚝의 실루엣을 활용합니다. 빅토리안 타이포그래피, 블루프린트 스타일의 기술 도면, 스팀펑크 장식이 어우러져 혁신과 진보의 시대정신을 담아냅니다.',
+    previewImage: 'https://images.unsplash.com/photo-1485841890310-6a055c88698a?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'american-frontier',
+    name: '미국 개척시대 (American Frontier)',
+    description: '서부 카우보이와 황야, 골드러시 시대의 거친 낭만',
+    longDescription: '19세기 미국 서부 개척 시대의 분위기를 재현합니다. 먼지 낀 갈색, 가죽색, 하늘빛 데님 블루를 주로 사용하며, 웨스턴 우드 타이포그래피, 올드 포스터 스타일, 로프와 말굽 장식을 활용합니다. 사막과 협곡의 풍경, 카우보이 실루엣 등으로 모험과 자유의 정신을 표현합니다.',
+    previewImage: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80'
+  },
+
+  // ========== 현대 디자인 스타일 ==========
   {
     id: 'dynamic-glassmorphism',
     name: 'Dynamic Glassmorphism',
