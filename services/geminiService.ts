@@ -337,8 +337,7 @@ Video Requirements:
         aspectRatio: '16:9',
         numberOfVideos: 1,
         durationSeconds: 8,
-        personGeneration: 'allow_adult',
-        generateAudio: true
+        personGeneration: 'allow_adult'
       }
     });
 
