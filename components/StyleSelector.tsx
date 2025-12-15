@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { INFOGRAPHIC_STYLES, SIZE_OPTIONS, COLOR_OPTIONS } from '../data/styles';
 import { GenerationConfig, InfographicStyle } from '../types';
-import { Upload, Check, ChevronDown, Info, X } from 'lucide-react';
+import { Upload, Check, ChevronDown, Info, X, FileText } from 'lucide-react';
 
 interface StyleSelectorProps {
   config: GenerationConfig;
@@ -159,8 +159,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                        key={style.id}
                        onClick={() => setSelectedPreviewStyle(style)}
                        className={`cursor-pointer rounded-xl p-3 border text-left transition-all relative group overflow-hidden
-                         ${config.selectedStyleId === style.id 
-                           ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-1 ring-blue-500' 
+                         ${config.selectedStyleId === style.id
+                           ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-1 ring-blue-500'
                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}
                        `}
                      >
@@ -177,7 +177,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                                 {style.description}
                            </div>
                        </div>
-                       
+
                        {/* Selected Indicator */}
                        {config.selectedStyleId === style.id && (
                           <div className="absolute top-2 right-2 text-blue-600 bg-white dark:bg-slate-800 dark:text-blue-400 rounded-full p-0.5 shadow-sm z-20">
@@ -191,6 +191,28 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                        </div>
                      </div>
                   ))}
+               </div>
+          </div>
+
+          <hr className="border-slate-100 dark:border-slate-800" />
+
+          {/* Custom Instructions Section */}
+          <div className="space-y-3">
+               <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">중요 지침 (Custom Instructions)</label>
+               </div>
+               <div className="bg-amber-50/50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+                  <textarea
+                     value={config.customInstructions || ''}
+                     onChange={(e) => onUpdateConfig({ customInstructions: e.target.value })}
+                     placeholder="인포그래픽 생성 시 반영할 특별한 지침을 입력하세요.&#10;&#10;예시:&#10;- 통계 데이터를 강조해주세요&#10;- 아이콘을 많이 사용해주세요&#10;- 3단 레이아웃으로 구성해주세요&#10;- 핵심 키워드를 크게 표시해주세요"
+                     className="w-full h-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                  />
+                  <div className="text-[10px] text-amber-700 dark:text-amber-400 mt-2 flex items-start gap-1.5">
+                     <Info className="w-3 h-3 shrink-0 mt-0.5" />
+                     <span>입력한 지침은 AI가 인포그래픽을 생성할 때 우선적으로 반영됩니다.</span>
+                  </div>
                </div>
           </div>
        </div>

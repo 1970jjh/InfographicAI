@@ -59,4 +59,5 @@ export interface GenerationConfig {
   customStyleImage?: string; // Base64
   sizeOption: string; // id of the SizeOption
   selectedColor?: string; // Hex or Name
+  customInstructions?: string; // 사용자 지정 인포그래픽 생성 지침
 }
