@@ -75,6 +75,11 @@ export const generateInfographic = async (
     ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
     : "Color Palette: Auto-detect the best color scheme based on the content and style.";
 
+  // Custom Instructions
+  const customInstructions = config.customInstructions
+    ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
+    : "";
+
   let prompt = `Create a single, high-quality, professional infographic that summarizes the key information from the provided slide images.
 
   Language: ${config.language}
@@ -82,7 +87,7 @@ export const generateInfographic = async (
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
-
+  ${customInstructions}
   Instructions:
   - Combine the content from the input slides into one cohesive narrative within a single image.
   - Use the specified language for all text.
@@ -247,6 +252,11 @@ export const generateFromWebContent = async (
     ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
     : "Color Palette: Auto-detect the best color scheme based on the content and style.";
 
+  // Custom Instructions
+  const customInstructions = config.customInstructions
+    ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
+    : "";
+
   // Truncate content if too long
   const maxContentLength = 8000;
   const truncatedContent = webContent.content.length > maxContentLength
@@ -268,7 +278,7 @@ export const generateFromWebContent = async (
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
-
+  ${customInstructions}
   INSTRUCTIONS:
   - Analyze the web page content and extract the most important information, key points, statistics, and insights.
   - Create a visually stunning infographic that presents this information in an organized, easy-to-understand format.
