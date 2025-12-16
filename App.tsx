@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 'lucide-react';
 import { Slide, GenerationConfig } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
-import { generateInfographic, generateFromWebContent } from './services/geminiService';
+import { generateInfographic, generateFromWebContent, generateFromTextContent } from './services/geminiService';
 import { fetchUrlContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
@@ -56,6 +56,9 @@ const App: React.FC = () => {
     author?: string;
     thumbnail?: string;
   } | null>(null);
+
+  // Text Content State
+  const [textContent, setTextContent] = useState<string | null>(null);
 
   // Dark Mode Effect
   useEffect(() => {
@@ -131,6 +134,7 @@ const App: React.FC = () => {
   const handleUrlSubmit = async (url: string) => {
     setIsUrlProcessing(true);
     setWebContent(null);
+    setTextContent(null); // Clear text content when using URL
 
     try {
       const result = await fetchUrlContent(url);
@@ -158,6 +162,14 @@ const App: React.FC = () => {
     }
   };
 
+  // Text Content Handler
+  const handleTextSubmit = (text: string) => {
+    setTextContent(text);
+    setWebContent(null); // Clear web content when using text
+    setSlides([]); // Clear slides when using text mode
+    setGeneratedImage(null);
+  };
+
   const toggleSlideSelection = (id: string) => {
     setSlides(prev => prev.map(slide =>
       slide.id === id ? { ...slide, selected: !slide.selected } : slide
@@ -180,9 +192,9 @@ const App: React.FC = () => {
   const handleGenerateInfographic = async () => {
     const selectedSlides = slides.filter(s => s.selected);
 
-    // Check if we have either slides or web content
-    if (selectedSlides.length === 0 && !webContent) {
-        alert("파일을 업로드하거나 웹페이지 URL을 입력해주세요.");
+    // Check if we have either slides, web content, or text content
+    if (selectedSlides.length === 0 && !webContent && !textContent) {
+        alert("파일을 업로드하거나 웹페이지 URL 또는 텍스트를 입력해주세요.");
         return;
     }
 
@@ -195,6 +207,9 @@ const App: React.FC = () => {
       if (webContent) {
         // Generate from web content
         resultUrl = await generateFromWebContent(webContent, config);
+      } else if (textContent) {
+        // Generate from text content
+        resultUrl = await generateFromTextContent(textContent, config);
       } else {
         // Generate from slides
         resultUrl = await generateInfographic(selectedSlides, config);
@@ -270,6 +285,8 @@ const App: React.FC = () => {
               onUrlSubmit={handleUrlSubmit}
               isUrlProcessing={isUrlProcessing}
               webContent={webContent}
+              onTextSubmit={handleTextSubmit}
+              textContent={textContent}
            />
         </aside>
 
@@ -321,7 +338,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                  <button
                     onClick={handleGenerateInfographic}
-                    disabled={isGenerating || (slides.filter(s => s.selected).length === 0 && !webContent)}
+                    disabled={isGenerating || (slides.filter(s => s.selected).length === 0 && !webContent && !textContent)}
                     className={`
                        flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
                        ${isGenerating
@@ -330,7 +347,9 @@ const App: React.FC = () => {
                            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700'
                            : webContent
                              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700'
-                             : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
+                             : textContent
+                               ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700'
+                               : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'}
                     `}
                  >
                     <ImageIcon className="w-5 h-5" />
@@ -338,7 +357,9 @@ const App: React.FC = () => {
                       ? '유튜브 인포그래픽 생성'
                       : webContent
                         ? '웹페이지 인포그래픽 생성'
-                        : '인포그래픽 생성하기'}
+                        : textContent
+                          ? '텍스트 인포그래픽 생성'
+                          : '인포그래픽 생성하기'}
                  </button>
               </div>
 
