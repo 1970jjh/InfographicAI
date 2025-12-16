@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Slide } from '../types';
-import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square, Globe, Loader2, Youtube, Link } from 'lucide-react';
+import { CheckCircle2, FileUp, Lock, LogIn, CheckSquare, Square, Globe, Loader2, Youtube, Link, FileText } from 'lucide-react';
 
 interface PageSelectorProps {
   slides: Slide[];
@@ -27,6 +27,9 @@ interface PageSelectorProps {
     author?: string;
     thumbnail?: string;
   } | null;
+  // Text Input Props
+  onTextSubmit: (text: string) => void;
+  textContent: string | null;
 }
 
 export const PageSelector: React.FC<PageSelectorProps> = ({
@@ -44,10 +47,13 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   onDeselectAll,
   onUrlSubmit,
   isUrlProcessing,
-  webContent
+  webContent,
+  onTextSubmit,
+  textContent
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [textInput, setTextInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUrlSubmit = () => {
@@ -59,6 +65,12 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   const handleUrlKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isUrlProcessing) {
       handleUrlSubmit();
+    }
+  };
+
+  const handleTextSubmit = () => {
+    if (textInput.trim()) {
+      onTextSubmit(textInput.trim());
     }
   };
 
@@ -235,6 +247,57 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
               웹페이지 또는 유튜브 영상 내용을 분석하여 인포그래픽 생성
             </p>
           </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">또는</span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+          </div>
+
+          {/* Text Input Section */}
+          <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:bg-slate-800 rounded-xl p-4 border border-violet-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">텍스트 입력</span>
+            </div>
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="인포그래픽으로 만들 내용을 직접 입력하세요.&#10;&#10;예시:&#10;- 회의록, 보고서 내용&#10;- 학습 자료, 강의 노트&#10;- 아이디어, 기획안 등"
+              className="w-full h-32 px-4 py-3 rounded-lg border text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white
+                border-slate-300 dark:border-slate-600 focus:ring-violet-500
+                focus:outline-none focus:ring-2 resize-none"
+            />
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                텍스트를 분석하여 인포그래픽 생성
+              </p>
+              <button
+                onClick={handleTextSubmit}
+                disabled={!textInput.trim()}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 dark:disabled:bg-slate-700
+                  text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors
+                  disabled:cursor-not-allowed"
+              >
+                <FileText className="w-4 h-4" />
+                적용
+              </button>
+            </div>
+          </div>
+
+          {/* Text Content Preview */}
+          {textContent && !webContent && (
+            <div className="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-violet-500 shadow-md">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                <span className="text-sm font-bold text-violet-700 dark:text-violet-400">텍스트 입력됨</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-4">
+                {textContent.substring(0, 300)}{textContent.length > 300 ? '...' : ''}
+              </p>
+            </div>
+          )}
 
           {/* Web/YouTube Content Preview */}
           {webContent && (

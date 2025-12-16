@@ -335,3 +335,105 @@ export const generateFromWebContent = async (
     throw error;
   }
 };
+
+/**
+ * Generate infographic from user-provided text content
+ */
+export const generateFromTextContent = async (
+  textContent: string,
+  config: GenerationConfig
+): Promise<string | null> => {
+  await ensureApiKey();
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const parts: any[] = [];
+
+  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
+  const styleName = selectedStyle ? selectedStyle.name : 'Custom';
+  const styleDesc = selectedStyle ? selectedStyle.description : 'Match the reference image style.';
+  const sizeInstruction = getSizeInstruction(config.sizeOption);
+
+  // Color Instruction
+  const colorInstruction = config.selectedColor
+    ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
+    : "Color Palette: Auto-detect the best color scheme based on the content and style.";
+
+  // Custom Instructions
+  const customInstructions = config.customInstructions
+    ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
+    : "";
+
+  // Truncate content if too long
+  const maxContentLength = 8000;
+  const truncatedContent = textContent.length > maxContentLength
+    ? textContent.substring(0, maxContentLength) + '...'
+    : textContent;
+
+  const prompt = `Create a single, high-quality, professional infographic that summarizes and visualizes the following text content.
+
+  USER PROVIDED TEXT:
+  ${truncatedContent}
+
+  DESIGN REQUIREMENTS:
+  Language: ${config.language}
+  Style: ${styleName}
+  Style Description: ${styleDesc}
+  ${sizeInstruction}
+  ${colorInstruction}
+  ${customInstructions}
+  INSTRUCTIONS:
+  - Analyze the provided text and extract the most important information, key points, statistics, and insights.
+  - Create a visually stunning infographic that presents this information in an organized, easy-to-understand format.
+  - Use appropriate icons, charts, diagrams, or visual elements to represent the data.
+  - Create a clear and engaging title/header based on the content.
+  - Organize information hierarchically with clear sections.
+  - Use the specified language for all text in the infographic.
+  - Adhere strictly to the requested visual style.
+  - Make it visually engaging, legible, and suitable for the selected format.
+  - Include relevant visual metaphors or illustrations that enhance understanding.
+  `;
+
+  parts.push({ text: prompt });
+
+  // Add custom style image if provided
+  if (config.selectedStyleId === 'custom' && config.customStyleImage) {
+    parts.push({ text: "Reference Style Image:" });
+    parts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: getBase64FromDataUrl(config.customStyleImage),
+      },
+    });
+  }
+
+  const targetAspectRatio = mapSizeIdToAspectRatio(config.sizeOption);
+
+  try {
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL_NAME,
+      contents: { parts },
+      config: {
+        imageConfig: {
+          aspectRatio: targetAspectRatio,
+          imageSize: "2K"
+        }
+      }
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) return null;
+
+    const resultParts = candidates[0].content.parts;
+    const imagePart = resultParts.find(p => p.inlineData);
+
+    if (imagePart && imagePart.inlineData) {
+      return `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
+    }
+    return null;
+
+  } catch (error: any) {
+    console.error("Text Content Infographic Gen Error:", error);
+    handleAuthError(error);
+    throw error;
+  }
+};
