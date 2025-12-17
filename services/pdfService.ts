@@ -1,5 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { jsPDF } from 'jspdf';
+import JSZip from 'jszip';
 import { Slide, SlideContent } from '../types';
 
 // Configure worker for PDF.js
@@ -232,6 +233,165 @@ export const createEditablePresentation = (content: SlideContent, filename: stri
           align: 'center',
           fontFace: fontFace
       });
+  }
+
+  pptx.writeFile({ fileName: filename });
+};
+
+// ========== Multi-Image Download Functions ==========
+
+// Helper function to convert data URL to blob
+const dataUrlToBlob = (dataUrl: string): Blob => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+// Helper function to convert image to specific format
+const convertImageFormat = (imageUrl: string, format: 'jpeg' | 'png', quality: number = 0.95): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(imageUrl);
+        return;
+      }
+
+      if (format === 'jpeg') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL(`image/${format}`, quality));
+    };
+  });
+};
+
+// Download multiple images as ZIP (JPG format)
+export const saveMultipleImagesAsJpgZip = async (imageUrls: string[], filename: string = 'Infographics_JPG.zip') => {
+  const zip = new JSZip();
+
+  for (let i = 0; i < imageUrls.length; i++) {
+    const jpgDataUrl = await convertImageFormat(imageUrls[i], 'jpeg', 0.95);
+    const blob = dataUrlToBlob(jpgDataUrl);
+    zip.file(`Infographic_${i + 1}.jpg`, blob);
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(content);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+// Download multiple images as ZIP (PNG format)
+export const saveMultipleImagesAsPngZip = async (imageUrls: string[], filename: string = 'Infographics_PNG.zip') => {
+  const zip = new JSZip();
+
+  for (let i = 0; i < imageUrls.length; i++) {
+    const pngDataUrl = await convertImageFormat(imageUrls[i], 'png');
+    const blob = dataUrlToBlob(pngDataUrl);
+    zip.file(`Infographic_${i + 1}.png`, blob);
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(content);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+// Download multiple images as single PDF
+export const saveMultipleImagesToPdf = async (imageUrls: string[], filename: string = 'Infographics.pdf') => {
+  if (imageUrls.length === 0) return;
+
+  // Load all images first
+  const loadedImages: HTMLImageElement[] = await Promise.all(
+    imageUrls.map(url => new Promise<HTMLImageElement>((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(img);
+    }))
+  );
+
+  // Create PDF with first image's dimensions
+  const firstImg = loadedImages[0];
+  const doc = new jsPDF({
+    orientation: firstImg.width > firstImg.height ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [firstImg.width, firstImg.height]
+  });
+
+  // Add first image
+  doc.addImage(imageUrls[0], 'PNG', 0, 0, firstImg.width, firstImg.height);
+
+  // Add remaining images on new pages
+  for (let i = 1; i < imageUrls.length; i++) {
+    const img = loadedImages[i];
+    doc.addPage([img.width, img.height], img.width > img.height ? 'landscape' : 'portrait');
+    doc.addImage(imageUrls[i], 'PNG', 0, 0, img.width, img.height);
+  }
+
+  doc.save(filename);
+};
+
+// Download multiple images as single PPTX
+export const saveMultipleImagesToPptx = async (imageUrls: string[], filename: string = 'Infographics.pptx') => {
+  const PptxGenJS = (window as any).PptxGenJS;
+  if (!PptxGenJS) {
+    alert("PPTX 생성 라이브러리가 로드되지 않았습니다.");
+    return;
+  }
+
+  if (imageUrls.length === 0) return;
+
+  const pptx = new PptxGenJS();
+
+  // Load all images to get dimensions
+  const loadedImages: HTMLImageElement[] = await Promise.all(
+    imageUrls.map(url => new Promise<HTMLImageElement>((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(img);
+    }))
+  );
+
+  // Use first image to set layout
+  const firstImg = loadedImages[0];
+  const ratio = firstImg.width / firstImg.height;
+  const slideWidth = 10;
+  const slideHeight = slideWidth / ratio;
+
+  pptx.defineLayout({ name: 'CUSTOM', width: slideWidth, height: slideHeight });
+  pptx.layout = 'CUSTOM';
+
+  // Add each image as a slide
+  for (let i = 0; i < imageUrls.length; i++) {
+    const slide = pptx.addSlide();
+    slide.addImage({
+      data: imageUrls[i],
+      x: 0,
+      y: 0,
+      w: '100%',
+      h: '100%',
+    });
   }
 
   pptx.writeFile({ fileName: filename });

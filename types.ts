@@ -61,3 +61,22 @@ export interface GenerationConfig {
   selectedColor?: string; // Hex or Name
   customInstructions?: string; // 사용자 지정 인포그래픽 생성 지침
 }
+
+// Queue item for batch infographic generation
+export interface InfographicQueueItem {
+  id: string;
+  name: string; // Display name (e.g., "인포그래픽 1")
+  selectedSlideIds: string[]; // IDs of selected slides for this item
+  webContent?: {
+    title: string;
+    content: string;
+    url: string;
+    type: 'webpage' | 'youtube';
+    author?: string;
+    thumbnail?: string;
+  };
+  textContent?: string;
+  generatedImage?: string; // Result image data URL
+  status: 'pending' | 'generating' | 'completed' | 'error';
+  errorMessage?: string;
+}
