@@ -48,7 +48,8 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     mode: 'infographic',
     language: '한국어 (Korean)',
-    selectedStyleId: 'dynamic-glassmorphism',
+    selectedStyleId: 'brutalism', // Default: Brutalism
+    subStyleId: undefined, // Optional sub style
     sizeOption: 'presentation-wide'
   });
 
@@ -570,7 +571,7 @@ const App: React.FC = () => {
                          <div className="text-[10px] text-slate-400">
                            {item.webContent ? (item.webContent.type === 'youtube' ? '유튜브' : '웹페이지') :
                             item.textContent ? '텍스트' :
-                            `${item.selectedSlides.length}개 슬라이드`}
+                            `슬라이드 ${item.selectedSlides.map(s => s.pageIndex).join(', ')} (${item.selectedSlides.length}개)`}
                          </div>
                        </div>
                      </div>
