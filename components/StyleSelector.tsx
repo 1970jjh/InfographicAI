@@ -40,7 +40,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
   };
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors relative">
+    <div className="flex-1 overflow-hidden flex flex-col bg-white dark:bg-slate-900 transition-colors relative">
        <div className="p-5 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
           <h2 className="font-bold text-slate-800 dark:text-slate-100 text-base uppercase tracking-wider">설정 (Configuration)</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">

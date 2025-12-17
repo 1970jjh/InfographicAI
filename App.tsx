@@ -509,8 +509,8 @@ const App: React.FC = () => {
         <section className="w-[350px] shrink-0 h-full z-10 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
            <StyleSelector config={config} onUpdateConfig={updateConfig} />
 
-           {/* Queue Panel */}
-           <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800/50">
+           {/* Queue Panel - Always visible at bottom */}
+           <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800/50">
              <div className="flex items-center justify-between mb-3">
                <div className="flex items-center gap-2">
                  <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
