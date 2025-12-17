@@ -66,7 +66,7 @@ export interface GenerationConfig {
 export interface InfographicQueueItem {
   id: string;
   name: string; // Display name (e.g., "인포그래픽 1")
-  selectedSlideIds: string[]; // IDs of selected slides for this item
+  selectedSlides: Slide[]; // Actual slide data (stored to preserve even when slides array changes)
   webContent?: {
     title: string;
     content: string;

@@ -91,9 +91,9 @@ const App: React.FC = () => {
 
   // Add new queue item with current selection
   const addToQueue = () => {
-    const selectedSlideIds = slides.filter(s => s.selected).map(s => s.id);
+    const selectedSlideData = slides.filter(s => s.selected);
 
-    if (selectedSlideIds.length === 0 && !webContent && !textContent) {
+    if (selectedSlideData.length === 0 && !webContent && !textContent) {
       alert("대기열에 추가할 콘텐츠를 선택해주세요.");
       return;
     }
@@ -101,7 +101,7 @@ const App: React.FC = () => {
     const newItem: InfographicQueueItem = {
       id: crypto.randomUUID(),
       name: `인포그래픽 ${queue.length + 1}`,
-      selectedSlideIds,
+      selectedSlides: selectedSlideData, // Store actual slide data
       webContent: webContent || undefined,
       textContent: textContent || undefined,
       status: 'pending'
@@ -127,7 +127,7 @@ const App: React.FC = () => {
     });
   };
 
-  // Select queue item for editing
+  // Select queue item for editing (show which slides were selected)
   const selectQueueItem = (index: number) => {
     const item = queue[index];
     if (!item) return;
@@ -135,9 +135,10 @@ const App: React.FC = () => {
     setActiveQueueIndex(index);
 
     // Restore the selection state for this queue item
+    const selectedIds = item.selectedSlides.map(s => s.id);
     setSlides(prev => prev.map(slide => ({
       ...slide,
-      selected: item.selectedSlideIds.includes(slide.id)
+      selected: selectedIds.includes(slide.id)
     })));
     setWebContent(item.webContent || null);
     setTextContent(item.textContent || null);
@@ -147,13 +148,13 @@ const App: React.FC = () => {
   const updateCurrentQueueItem = () => {
     if (queue.length === 0) return;
 
-    const selectedSlideIds = slides.filter(s => s.selected).map(s => s.id);
+    const selectedSlideData = slides.filter(s => s.selected);
 
     setQueue(prev => prev.map((item, idx) =>
       idx === activeQueueIndex
         ? {
             ...item,
-            selectedSlideIds,
+            selectedSlides: selectedSlideData,
             webContent: webContent || undefined,
             textContent: textContent || undefined
           }
@@ -310,11 +311,9 @@ const App: React.FC = () => {
             resultUrl = await generateFromWebContent(item.webContent, config);
           } else if (item.textContent) {
             resultUrl = await generateFromTextContent(item.textContent, config);
-          } else if (item.selectedSlideIds.length > 0) {
-            const selectedSlides = slides.filter(s => item.selectedSlideIds.includes(s.id));
-            if (selectedSlides.length > 0) {
-              resultUrl = await generateInfographic(selectedSlides, config);
-            }
+          } else if (item.selectedSlides.length > 0) {
+            // Use stored slide data directly
+            resultUrl = await generateInfographic(item.selectedSlides, config);
           }
 
           if (resultUrl) {
@@ -353,7 +352,7 @@ const App: React.FC = () => {
     const newItem: InfographicQueueItem = {
       id: crypto.randomUUID(),
       name: `인포그래픽 ${queue.length + 1}`,
-      selectedSlideIds: selectedSlides.map(s => s.id),
+      selectedSlides: selectedSlides, // Store actual slide data
       webContent: webContent || undefined,
       textContent: textContent || undefined,
       status: 'generating'
@@ -571,7 +570,7 @@ const App: React.FC = () => {
                          <div className="text-[10px] text-slate-400">
                            {item.webContent ? (item.webContent.type === 'youtube' ? '유튜브' : '웹페이지') :
                             item.textContent ? '텍스트' :
-                            `${item.selectedSlideIds.length}개 슬라이드`}
+                            `${item.selectedSlides.length}개 슬라이드`}
                          </div>
                        </div>
                      </div>
