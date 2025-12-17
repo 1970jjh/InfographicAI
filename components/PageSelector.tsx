@@ -30,6 +30,9 @@ interface PageSelectorProps {
   // Text Input Props
   onTextSubmit: (text: string) => void;
   textContent: string | null;
+  // Batch Queue Props
+  onAddToBatch: () => void;
+  batchQueueLength: number;
 }
 
 export const PageSelector: React.FC<PageSelectorProps> = ({
@@ -49,7 +52,9 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   isUrlProcessing,
   webContent,
   onTextSubmit,
-  textContent
+  textContent,
+  onAddToBatch,
+  batchQueueLength
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -333,7 +338,14 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           )}
 
           <div className="mt-6 flex items-center justify-between">
-             <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">슬라이드 목록</h2>
+             <div className="flex items-center gap-2">
+               <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">슬라이드 목록</h2>
+               {batchQueueLength > 0 && (
+                 <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+                   대기열: {batchQueueLength}
+                 </span>
+               )}
+             </div>
              <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full font-medium">
                {slides.filter(s => s.selected).length} / {slides.length}
              </span>

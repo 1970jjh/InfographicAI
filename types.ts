@@ -61,3 +61,25 @@ export interface GenerationConfig {
   selectedColor?: string; // Hex or Name
   customInstructions?: string; // 사용자 지정 인포그래픽 생성 지침
 }
+
+// 배치 생성을 위한 타입
+export type BatchItemSource =
+  | { type: 'slides'; slideIds: string[]; thumbnails: string[] }
+  | { type: 'web'; content: { title: string; content: string; url: string; type: 'webpage' | 'youtube'; author?: string; thumbnail?: string } }
+  | { type: 'text'; content: string };
+
+export interface BatchItem {
+  id: string;
+  source: BatchItemSource;
+  config: GenerationConfig;
+  label: string; // 표시용 라벨
+  createdAt: number;
+}
+
+export interface BatchResult {
+  id: string;
+  batchItemId: string;
+  imageUrl: string;
+  label: string;
+  createdAt: number;
+}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 'lucide-react';
-import { Slide, GenerationConfig } from './types';
+import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun, Plus, Layers, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Slide, GenerationConfig, BatchItem, BatchResult, BatchItemSource } from './types';
 import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
 import { generateInfographic, generateFromWebContent, generateFromTextContent } from './services/geminiService';
 import { fetchUrlContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
+import { BatchQueue } from './components/BatchQueue';
 
 const ADMIN_PASSWORD = '6749467';
 
@@ -59,6 +60,13 @@ const App: React.FC = () => {
 
   // Text Content State
   const [textContent, setTextContent] = useState<string | null>(null);
+
+  // Batch Generation State
+  const [batchQueue, setBatchQueue] = useState<BatchItem[]>([]);
+  const [batchResults, setBatchResults] = useState<BatchResult[]>([]);
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
   // Dark Mode Effect
   useEffect(() => {
@@ -228,6 +236,143 @@ const App: React.FC = () => {
     }
   };
 
+  // Batch Queue Handlers
+  const addToBatchQueue = () => {
+    const selectedSlides = slides.filter(s => s.selected);
+
+    if (selectedSlides.length === 0 && !webContent && !textContent) {
+      alert("파일을 업로드하거나 웹페이지 URL 또는 텍스트를 입력해주세요.");
+      return;
+    }
+
+    let source: BatchItemSource;
+    let label: string;
+
+    if (webContent) {
+      source = { type: 'web', content: webContent };
+      label = webContent.type === 'youtube'
+        ? `유튜브: ${webContent.title?.substring(0, 30) || 'Untitled'}...`
+        : `웹페이지: ${webContent.title?.substring(0, 30) || 'Untitled'}...`;
+    } else if (textContent) {
+      source = { type: 'text', content: textContent };
+      label = `텍스트: ${textContent.substring(0, 30)}...`;
+    } else {
+      source = {
+        type: 'slides',
+        slideIds: selectedSlides.map(s => s.id),
+        thumbnails: selectedSlides.slice(0, 3).map(s => s.originalImage)
+      };
+      label = `슬라이드 ${selectedSlides.length}장 (p.${selectedSlides.map(s => s.pageIndex).join(', ')})`;
+    }
+
+    const newBatchItem: BatchItem = {
+      id: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      source,
+      config: { ...config },
+      label,
+      createdAt: Date.now()
+    };
+
+    setBatchQueue(prev => [...prev, newBatchItem]);
+
+    // 선택 해제하여 다음 선택 준비
+    deselectAllSlides();
+    setWebContent(null);
+    setTextContent(null);
+  };
+
+  const removeFromBatchQueue = (id: string) => {
+    setBatchQueue(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearBatchQueue = () => {
+    setBatchQueue([]);
+  };
+
+  // 배치 일괄 생성
+  const handleBatchGenerate = async () => {
+    if (batchQueue.length === 0) {
+      alert("생성할 항목이 없습니다. 먼저 큐에 추가해주세요.");
+      return;
+    }
+
+    setIsBatchGenerating(true);
+    setBatchResults([]);
+    setBatchProgress({ current: 0, total: batchQueue.length });
+    setCurrentResultIndex(0);
+
+    const results: BatchResult[] = [];
+
+    for (let i = 0; i < batchQueue.length; i++) {
+      const item = batchQueue[i];
+      setBatchProgress({ current: i + 1, total: batchQueue.length });
+
+      try {
+        let resultUrl: string | null = null;
+
+        if (item.source.type === 'web') {
+          resultUrl = await generateFromWebContent(item.source.content, item.config);
+        } else if (item.source.type === 'text') {
+          resultUrl = await generateFromTextContent(item.source.content, item.config);
+        } else {
+          // slides
+          const slidesToGenerate = slides.filter(s => item.source.slideIds.includes(s.id));
+          if (slidesToGenerate.length > 0) {
+            resultUrl = await generateInfographic(slidesToGenerate, item.config);
+          }
+        }
+
+        if (resultUrl) {
+          results.push({
+            id: `result-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            batchItemId: item.id,
+            imageUrl: resultUrl,
+            label: item.label,
+            createdAt: Date.now()
+          });
+        }
+      } catch (e) {
+        console.error(`배치 항목 ${i + 1} 생성 실패:`, e);
+      }
+    }
+
+    setBatchResults(results);
+    setBatchQueue([]);
+    setIsBatchGenerating(false);
+
+    if (results.length > 0) {
+      setGeneratedImage(results[0].imageUrl);
+    }
+  };
+
+  // 결과 이미지 네비게이션
+  const navigateResults = (direction: 'prev' | 'next') => {
+    if (batchResults.length === 0) return;
+
+    let newIndex = currentResultIndex;
+    if (direction === 'prev') {
+      newIndex = currentResultIndex > 0 ? currentResultIndex - 1 : batchResults.length - 1;
+    } else {
+      newIndex = currentResultIndex < batchResults.length - 1 ? currentResultIndex + 1 : 0;
+    }
+
+    setCurrentResultIndex(newIndex);
+    setGeneratedImage(batchResults[newIndex].imageUrl);
+  };
+
+  const selectResultByIndex = (index: number) => {
+    if (index >= 0 && index < batchResults.length) {
+      setCurrentResultIndex(index);
+      setGeneratedImage(batchResults[index].imageUrl);
+    }
+  };
+
+  const clearBatchResults = () => {
+    setBatchResults([]);
+    setCurrentResultIndex(0);
+    setGeneratedImage(null);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Header */}
@@ -287,12 +432,24 @@ const App: React.FC = () => {
               webContent={webContent}
               onTextSubmit={handleTextSubmit}
               textContent={textContent}
+              onAddToBatch={addToBatchQueue}
+              batchQueueLength={batchQueue.length}
            />
         </aside>
 
         {/* Middle Column: Controls (350px fixed) */}
-        <section className="w-[350px] shrink-0 h-full z-10 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-           <StyleSelector config={config} onUpdateConfig={updateConfig} />
+        <section className="w-[350px] shrink-0 h-full z-10 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
+           <div className="flex-1 overflow-y-auto">
+             <StyleSelector config={config} onUpdateConfig={updateConfig} />
+           </div>
+           {/* Batch Queue Section */}
+           {batchQueue.length > 0 && (
+             <BatchQueue
+               items={batchQueue}
+               onRemoveItem={removeFromBatchQueue}
+               onClearAll={clearBatchQueue}
+             />
+           )}
         </section>
 
         {/* Right Column: Preview & Action (Fluid) */}
@@ -300,26 +457,68 @@ const App: React.FC = () => {
 
            {/* Canvas Area */}
            <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
-              {isGenerating ? (
+              {isGenerating || isBatchGenerating ? (
                   <div className="text-center p-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
                      <div className="relative w-20 h-20 mx-auto mb-6">
                         <div className="absolute inset-0 border-4 border-slate-200 dark:border-slate-700 rounded-full"></div>
                         <div className="absolute inset-0 border-4 rounded-full border-t-transparent animate-spin border-blue-600 dark:border-blue-500"></div>
                      </div>
                      <h2 className="text-2xl font-bold text-slate-800 dark:text-white animate-pulse mb-2">
-                         이미지 생성 중...
+                         {isBatchGenerating ? `배치 생성 중 (${batchProgress.current}/${batchProgress.total})` : '이미지 생성 중...'}
                      </h2>
                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                         Gemini 3.0 Pro가 디자인을 그리고 있습니다.
+                         {isBatchGenerating
+                           ? `${batchProgress.current}번째 인포그래픽을 생성하고 있습니다.`
+                           : 'Gemini 3.0 Pro가 디자인을 그리고 있습니다.'}
                      </p>
+                     {isBatchGenerating && (
+                       <div className="mt-4 w-64 mx-auto bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                         <div
+                           className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                           style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                         />
+                       </div>
+                     )}
                   </div>
               ) : generatedImage ? (
                   <div className="relative w-full h-full flex items-center justify-center group">
+                      {/* 배치 결과 네비게이션 */}
+                      {batchResults.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => navigateResults('prev')}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white/90 dark:bg-slate-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-slate-700 transition-all"
+                          >
+                            <ChevronLeft className="w-6 h-6 text-slate-700 dark:text-slate-200" />
+                          </button>
+                          <button
+                            onClick={() => navigateResults('next')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white/90 dark:bg-slate-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-slate-700 transition-all"
+                          >
+                            <ChevronRight className="w-6 h-6 text-slate-700 dark:text-slate-200" />
+                          </button>
+                        </>
+                      )}
                       <img
                         src={generatedImage}
                         alt="Generated Infographic"
                         className="max-w-full max-h-full object-contain shadow-2xl rounded-lg bg-white"
                       />
+                      {/* 배치 결과 인디케이터 */}
+                      {batchResults.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 px-4 py-2 rounded-full shadow-lg">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                            {currentResultIndex + 1} / {batchResults.length}
+                          </span>
+                          <button
+                            onClick={clearBatchResults}
+                            className="ml-2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                            title="모든 결과 삭제"
+                          >
+                            <X className="w-4 h-4 text-slate-500" />
+                          </button>
+                        </div>
+                      )}
                   </div>
               ) : (
                   <div className="text-center text-slate-400 dark:text-slate-600">
@@ -334,14 +533,15 @@ const App: React.FC = () => {
            {/* Bottom Action Bar */}
            <div className="h-24 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
 
-              {/* Left: Generate Button */}
-              <div className="flex items-center gap-4">
+              {/* Left: Generate Buttons */}
+              <div className="flex items-center gap-3">
+                 {/* 단일 생성 버튼 */}
                  <button
                     onClick={handleGenerateInfographic}
-                    disabled={isGenerating || (slides.filter(s => s.selected).length === 0 && !webContent && !textContent)}
+                    disabled={isGenerating || isBatchGenerating || (slides.filter(s => s.selected).length === 0 && !webContent && !textContent)}
                     className={`
-                       flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
-                       ${isGenerating
+                       flex items-center gap-3 px-5 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                       ${isGenerating || isBatchGenerating
                          ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
                          : webContent?.type === 'youtube'
                            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700'
@@ -354,13 +554,50 @@ const App: React.FC = () => {
                  >
                     <ImageIcon className="w-5 h-5" />
                     {webContent?.type === 'youtube'
-                      ? '유튜브 인포그래픽 생성'
+                      ? '유튜브 생성'
                       : webContent
-                        ? '웹페이지 인포그래픽 생성'
+                        ? '웹페이지 생성'
                         : textContent
-                          ? '텍스트 인포그래픽 생성'
-                          : '인포그래픽 생성하기'}
+                          ? '텍스트 생성'
+                          : '바로 생성'}
                  </button>
+
+                 {/* 큐에 추가 버튼 */}
+                 <button
+                    onClick={addToBatchQueue}
+                    disabled={isGenerating || isBatchGenerating || (slides.filter(s => s.selected).length === 0 && !webContent && !textContent)}
+                    className={`
+                       flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base transition-all border-2
+                       ${isGenerating || isBatchGenerating || (slides.filter(s => s.selected).length === 0 && !webContent && !textContent)
+                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed'
+                         : 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50'}
+                    `}
+                 >
+                    <Plus className="w-5 h-5" />
+                    큐에 추가
+                    {batchQueue.length > 0 && (
+                      <span className="ml-1 px-2 py-0.5 bg-amber-600 text-white text-xs rounded-full">
+                        {batchQueue.length}
+                      </span>
+                    )}
+                 </button>
+
+                 {/* 배치 일괄 생성 버튼 */}
+                 {batchQueue.length > 0 && (
+                   <button
+                      onClick={handleBatchGenerate}
+                      disabled={isGenerating || isBatchGenerating}
+                      className={`
+                         flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all
+                         ${isGenerating || isBatchGenerating
+                           ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                           : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'}
+                      `}
+                   >
+                      <Layers className="w-5 h-5" />
+                      {batchQueue.length}장 일괄 생성
+                   </button>
+                 )}
               </div>
 
               {/* Right: Download Options */}
