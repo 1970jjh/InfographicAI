@@ -55,7 +55,8 @@ export interface SlideContent {
 export interface GenerationConfig {
   mode: GenerationMode;
   language: string;
-  selectedStyleId: string;
+  selectedStyleId: string; // Main style
+  subStyleId?: string; // Sub style (optional)
   customStyleImage?: string; // Base64
   sizeOption: string; // id of the SizeOption
   selectedColor?: string; // Hex or Name

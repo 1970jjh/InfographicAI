@@ -134,14 +134,27 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
 
           {/* Style Section */}
           <div className="space-y-3">
-               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block">디자인 스타일 (Style)</label>
-               
+               <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block">디자인 스타일 (Style)</label>
+                  <div className="flex items-center gap-1 text-[10px]">
+                     <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded font-bold">메인</span>
+                     {config.subStyleId && (
+                        <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded font-bold">+서브</span>
+                     )}
+                  </div>
+               </div>
+
+               {/* Style Selection Guide */}
+               <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg">
+                  💡 <strong>클릭</strong>: 메인 스타일 선택 | <strong>더블클릭</strong>: 서브 스타일 추가/해제
+               </div>
+
                {/* Custom Upload Button */}
-               <div 
+               <div
                   onClick={() => fileInputRef.current?.click()}
                   className={`cursor-pointer border border-dashed rounded-xl p-4 flex items-center justify-center gap-2 transition-all mb-3
-                    ${config.selectedStyleId === 'custom' 
-                      ? 'bg-blue-50 dark:bg-slate-800 border-blue-400 text-blue-700 dark:text-blue-400' 
+                    ${config.selectedStyleId === 'custom'
+                      ? 'bg-blue-50 dark:bg-slate-800 border-blue-400 text-blue-700 dark:text-blue-400'
                       : 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-750'}
                   `}
                >
@@ -154,43 +167,74 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
 
                {/* Style Grid */}
                <div className="grid grid-cols-2 gap-2.5">
-                  {INFOGRAPHIC_STYLES.map((style) => (
-                     <div
-                       key={style.id}
-                       onClick={() => setSelectedPreviewStyle(style)}
-                       className={`cursor-pointer rounded-xl p-3 border text-left transition-all relative group overflow-hidden
-                         ${config.selectedStyleId === style.id
-                           ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-1 ring-blue-500'
-                           : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}
-                       `}
-                     >
-                       {/* Mini Preview Image in Grid if available, dimmed */}
-                       {style.previewImage && (
-                          <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-10 transition-opacity">
-                              <img src={style.previewImage} alt="" className="w-full h-full object-cover grayscale" />
-                          </div>
-                       )}
+                  {INFOGRAPHIC_STYLES.map((style) => {
+                     const isMainStyle = config.selectedStyleId === style.id;
+                     const isSubStyle = config.subStyleId === style.id;
 
-                       <div className="relative z-10">
-                           <div className="font-bold text-xs text-slate-800 dark:text-slate-200 mb-1 pr-4">{style.name}</div>
-                           <div className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-tight tracking-tight opacity-70 group-hover:opacity-100 transition-opacity">
-                                {style.description}
+                     return (
+                       <div
+                         key={style.id}
+                         onClick={() => {
+                           // Single click: Set as main style (clear sub if it was this)
+                           if (config.subStyleId === style.id) {
+                             onUpdateConfig({ subStyleId: undefined });
+                           }
+                           onUpdateConfig({ selectedStyleId: style.id, customStyleImage: undefined });
+                         }}
+                         onDoubleClick={(e) => {
+                           e.stopPropagation();
+                           // Double click: Toggle sub style (can't be same as main)
+                           if (style.id !== config.selectedStyleId) {
+                             onUpdateConfig({
+                               subStyleId: config.subStyleId === style.id ? undefined : style.id
+                             });
+                           }
+                         }}
+                         className={`cursor-pointer rounded-xl p-3 border text-left transition-all relative group overflow-hidden
+                           ${isMainStyle
+                             ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-2 ring-blue-500'
+                             : isSubStyle
+                               ? 'bg-purple-50 dark:bg-slate-800 border-purple-500 ring-2 ring-purple-500'
+                               : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}
+                         `}
+                       >
+                         {/* Mini Preview Image in Grid if available, dimmed */}
+                         {style.previewImage && (
+                            <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-10 transition-opacity">
+                                <img src={style.previewImage} alt="" className="w-full h-full object-cover grayscale" />
+                            </div>
+                         )}
+
+                         <div className="relative z-10">
+                             <div className="font-bold text-xs text-slate-800 dark:text-slate-200 mb-1 pr-8">{style.name}</div>
+                             <div className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-tight tracking-tight opacity-70 group-hover:opacity-100 transition-opacity">
+                                  {style.description}
+                             </div>
+                         </div>
+
+                         {/* Main Style Indicator */}
+                         {isMainStyle && (
+                            <div className="absolute top-2 right-2 text-white bg-blue-600 dark:bg-blue-500 rounded-full px-1.5 py-0.5 shadow-sm z-20 text-[9px] font-bold">
+                               메인
+                            </div>
+                         )}
+
+                         {/* Sub Style Indicator */}
+                         {isSubStyle && (
+                            <div className="absolute top-2 right-2 text-white bg-purple-600 dark:bg-purple-500 rounded-full px-1.5 py-0.5 shadow-sm z-20 text-[9px] font-bold">
+                               서브
+                            </div>
+                         )}
+
+                         {/* Info Icon hint */}
+                         {!isMainStyle && !isSubStyle && (
+                           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                <Info className="w-3 h-3 text-slate-400" />
                            </div>
+                         )}
                        </div>
-
-                       {/* Selected Indicator */}
-                       {config.selectedStyleId === style.id && (
-                          <div className="absolute top-2 right-2 text-blue-600 bg-white dark:bg-slate-800 dark:text-blue-400 rounded-full p-0.5 shadow-sm z-20">
-                             <Check className="w-3 h-3" />
-                          </div>
-                       )}
-
-                       {/* Info Icon hint */}
-                       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <Info className="w-3 h-3 text-slate-400" />
-                       </div>
-                     </div>
-                  ))}
+                     );
+                  })}
                </div>
           </div>
 
