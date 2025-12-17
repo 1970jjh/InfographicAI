@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun } from 'lucide-react';
 import { Slide, GenerationConfig } from './types';
-import { processFileToSlides, saveImageToPdf, saveImageToPptx } from './services/pdfService';
+import { processFileToSlides, saveImageToPdf, saveImageToPptx, saveImageAsJpg, saveImageAsPng } from './services/pdfService';
 import { generateInfographic, generateFromWebContent, generateFromTextContent } from './services/geminiService';
 import { fetchUrlContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
@@ -368,16 +368,28 @@ const App: React.FC = () => {
                   {generatedImage ? (
                     <>
                          <span className="text-xs text-slate-400 font-medium mb-1">결과물 저장</span>
-                         <div className="flex gap-3">
+                         <div className="flex gap-2">
+                            <button
+                               onClick={() => generatedImage && saveImageAsJpg(generatedImage, 'Infographic.jpg')}
+                               className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-bold text-sm transition-colors"
+                            >
+                               <ImageIcon className="w-4 h-4" /> JPG
+                            </button>
+                            <button
+                               onClick={() => generatedImage && saveImageAsPng(generatedImage, 'Infographic.png')}
+                               className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-sm transition-colors"
+                            >
+                               <ImageIcon className="w-4 h-4" /> PNG
+                            </button>
                             <button
                                onClick={() => generatedImage && saveImageToPdf(generatedImage, 'Infographic.pdf')}
-                               className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors"
+                               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors"
                             >
                                <Download className="w-4 h-4" /> PDF
                             </button>
                             <button
                                onClick={() => generatedImage && saveImageToPptx(generatedImage, 'Infographic.pptx')}
-                               className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg font-bold text-sm transition-colors"
+                               className="flex items-center gap-1.5 px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg font-bold text-sm transition-colors"
                             >
                                <Presentation className="w-4 h-4" /> PPTX
                             </button>

@@ -87,6 +87,53 @@ export const saveImageToPdf = (imageUrl: string, filename: string = 'infographic
   };
 };
 
+export const saveImageAsJpg = (imageUrl: string, filename: string = 'infographic.jpg') => {
+  const img = new Image();
+  img.src = imageUrl;
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fill white background for JPG (since JPG doesn't support transparency)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const link = document.createElement('a');
+    link.href = jpgDataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+};
+
+export const saveImageAsPng = (imageUrl: string, filename: string = 'infographic.png') => {
+  const img = new Image();
+  img.src = imageUrl;
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(img, 0, 0);
+
+    const pngDataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = pngDataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+};
+
 export const saveImageToPptx = (imageUrl: string, filename: string = 'infographic.pptx') => {
   const PptxGenJS = (window as any).PptxGenJS;
   if (!PptxGenJS) {
