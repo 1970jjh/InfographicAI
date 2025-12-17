@@ -248,4 +248,11 @@ export const INFOGRAPHIC_STYLES: InfographicStyle[] = [
     longDescription: 'Nvidia의 아이덴티티를 반영하여 검은색 배경에 형광 라임 그린(Lime Green)을 포인트로 사용합니다. 삼각형 메쉬 패턴, 회로 기판의 라인, 날카로운 앵글 등을 활용하여 고성능, 하드웨어, 게이밍 퍼포먼스의 느낌을 강렬하게 전달합니다.',
     previewImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'
   },
+  {
+    id: 'kakaotalk',
+    name: 'KakaoTalk Style',
+    description: '카카오톡 앱 스타일과 귀여운 카카오 프렌즈 캐릭터가 함께하는 친근한 디자인',
+    longDescription: '한국 대표 메신저 카카오톡의 UI 스타일과 카카오 프렌즈 캐릭터(라이언, 어피치, 무지, 콘 등)가 어우러진 친근하고 귀여운 디자인입니다. 카카오 옐로우(#FEE500)를 메인 컬러로 사용하고, 말풍선 형태의 정보 박스, 둥글둥글한 UI 컴포넌트, 그리고 귀여운 카카오 프렌즈 캐릭터들이 정보를 안내하는 듯한 구성으로 친숙하고 따뜻한 느낌을 전달합니다. 채팅 인터페이스 스타일의 레이아웃도 활용됩니다.',
+    previewImage: 'https://images.unsplash.com/photo-1611606063065-ee7946f0787a?auto=format&fit=crop&w=800&q=80'
+  },
 ];

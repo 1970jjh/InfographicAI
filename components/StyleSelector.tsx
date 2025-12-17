@@ -146,7 +146,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
 
                {/* Style Selection Guide */}
                <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg">
-                  💡 <strong>클릭</strong>: 메인 스타일 선택 | <strong>더블클릭</strong>: 서브 스타일 추가/해제
+                  💡 스타일을 클릭하면 <strong>메인/서브</strong> 중 선택할 수 있어요
                </div>
 
                {/* Custom Upload Button */}
@@ -174,22 +174,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                      return (
                        <div
                          key={style.id}
-                         onClick={() => {
-                           // Single click: Set as main style (clear sub if it was this)
-                           if (config.subStyleId === style.id) {
-                             onUpdateConfig({ subStyleId: undefined });
-                           }
-                           onUpdateConfig({ selectedStyleId: style.id, customStyleImage: undefined });
-                         }}
-                         onDoubleClick={(e) => {
-                           e.stopPropagation();
-                           // Double click: Toggle sub style (can't be same as main)
-                           if (style.id !== config.selectedStyleId) {
-                             onUpdateConfig({
-                               subStyleId: config.subStyleId === style.id ? undefined : style.id
-                             });
-                           }
-                         }}
+                         onClick={() => setSelectedPreviewStyle(style)}
                          className={`cursor-pointer rounded-xl p-3 border text-left transition-all relative group overflow-hidden
                            ${isMainStyle
                              ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-2 ring-blue-500'
@@ -262,28 +247,41 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
        </div>
 
        {/* Style Detail Modal - Enhanced & Larger */}
-       {selectedPreviewStyle && (
+       {selectedPreviewStyle && (() => {
+        const isCurrentMain = config.selectedStyleId === selectedPreviewStyle.id;
+        const isCurrentSub = config.subStyleId === selectedPreviewStyle.id;
+
+        return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div 
+            <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                 onClick={() => setSelectedPreviewStyle(null)}
             />
-            
+
             <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col">
-                
+
                 {/* Close Button */}
-                <button 
+                <button
                     onClick={() => setSelectedPreviewStyle(null)}
                     className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white z-20 backdrop-blur-md transition-all"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
+                {/* Current Selection Badge */}
+                {(isCurrentMain || isCurrentSub) && (
+                    <div className="absolute top-4 left-4 z-20">
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md ${isCurrentMain ? 'bg-blue-600' : 'bg-purple-600'}`}>
+                            {isCurrentMain ? '현재 메인 스타일' : '현재 서브 스타일'}
+                        </span>
+                    </div>
+                )}
+
                 {/* Hero Image Section (Larger) */}
                 <div className="relative h-64 sm:h-80 w-full shrink-0">
                     {selectedPreviewStyle.previewImage ? (
-                        <img 
-                           src={selectedPreviewStyle.previewImage} 
+                        <img
+                           src={selectedPreviewStyle.previewImage}
                            alt={selectedPreviewStyle.name}
                            className="w-full h-full object-cover"
                         />
@@ -292,10 +290,10 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                             <span className="text-white text-opacity-50 font-bold text-4xl">{selectedPreviewStyle.name[0]}</span>
                         </div>
                     )}
-                    
+
                     {/* Gradient Overlay for Text Readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    
+
                     {/* Title Overlay */}
                     <div className="absolute bottom-0 left-0 p-8 w-full">
                         <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-[10px] font-bold text-white mb-2 tracking-wider uppercase">
@@ -311,35 +309,83 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                 <div className="p-8 overflow-y-auto">
                     <div className="prose dark:prose-invert max-w-none">
                         <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">스타일 설명</h4>
-                        <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-8">
+                        <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
                             {selectedPreviewStyle.longDescription || selectedPreviewStyle.description}
                         </p>
                     </div>
 
                     {/* Example/Hint box */}
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mb-8 flex gap-3">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mb-6 flex gap-3">
                         <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                         <div className="text-sm text-slate-600 dark:text-slate-400">
                            <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">Tip</span>
-                           이 스타일을 선택하면 AI가 색상, 폰트, 레이아웃을 자동으로 해당 분위기에 맞춰 최적화합니다.
+                           메인 스타일은 기본 디자인을, 서브 스타일은 추가 요소를 결정합니다. 두 스타일을 조합하면 더 독특한 결과물을 얻을 수 있어요!
                         </div>
                     </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 mt-auto">
-                        <button
-                            onClick={() => {
-                                onUpdateConfig({ selectedStyleId: selectedPreviewStyle.id, customStyleImage: undefined });
-                                setSelectedPreviewStyle(null);
-                            }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all hover:shadow-lg hover:-translate-y-0.5 text-base flex items-center justify-center gap-2"
-                        >
-                            <Check className="w-5 h-5" />
-                            이 스타일 적용하기
-                        </button>
+
+                    {/* Action Buttons - Main/Sub Selection */}
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Main Style Button */}
+                            <button
+                                onClick={() => {
+                                    if (isCurrentMain) {
+                                        // 이미 메인이면 선택 해제 (기본값으로)
+                                        onUpdateConfig({ selectedStyleId: 'brutalism', customStyleImage: undefined });
+                                    } else {
+                                        // 서브였다면 서브 해제하고 메인으로
+                                        if (isCurrentSub) {
+                                            onUpdateConfig({ subStyleId: undefined });
+                                        }
+                                        onUpdateConfig({ selectedStyleId: selectedPreviewStyle.id, customStyleImage: undefined });
+                                    }
+                                    setSelectedPreviewStyle(null);
+                                }}
+                                className={`py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all
+                                    ${isCurrentMain
+                                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-2 border-blue-500'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg hover:-translate-y-0.5'}
+                                `}
+                            >
+                                <Check className="w-5 h-5" />
+                                {isCurrentMain ? '메인 선택 해제' : '메인 스타일로 선택'}
+                            </button>
+
+                            {/* Sub Style Button */}
+                            <button
+                                onClick={() => {
+                                    if (isCurrentSub) {
+                                        // 이미 서브면 선택 해제
+                                        onUpdateConfig({ subStyleId: undefined });
+                                    } else if (!isCurrentMain) {
+                                        // 메인이 아닐 때만 서브로 설정 가능
+                                        onUpdateConfig({ subStyleId: selectedPreviewStyle.id });
+                                    }
+                                    setSelectedPreviewStyle(null);
+                                }}
+                                disabled={isCurrentMain}
+                                className={`py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all
+                                    ${isCurrentMain
+                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                                        : isCurrentSub
+                                            ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-2 border-purple-500'
+                                            : 'bg-purple-600 hover:bg-purple-700 text-white hover:shadow-lg hover:-translate-y-0.5'}
+                                `}
+                            >
+                                <Check className="w-5 h-5" />
+                                {isCurrentSub ? '서브 선택 해제' : '서브 스타일로 선택'}
+                            </button>
+                        </div>
+
+                        {isCurrentMain && (
+                            <p className="text-xs text-center text-slate-500 dark:text-slate-400">
+                                메인 스타일은 서브로 변경할 수 없습니다. 먼저 선택을 해제해주세요.
+                            </p>
+                        )}
+
                         <button
                              onClick={() => setSelectedPreviewStyle(null)}
-                             className="px-8 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl transition-colors text-base"
+                             className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors text-sm"
                         >
                             닫기
                         </button>
@@ -347,7 +393,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                 </div>
             </div>
         </div>
-       )}
+        );
+       })()}
     </div>
   );
 };
