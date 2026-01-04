@@ -125,7 +125,7 @@ export const generateInfographic = async (
       config: {
         imageConfig: {
           aspectRatio: targetAspectRatio,
-          imageSize: "2K"
+          imageSize: config.resolution || "2K"
         }
       }
     });
@@ -313,7 +313,7 @@ export const generateFromWebContent = async (
       config: {
         imageConfig: {
           aspectRatio: targetAspectRatio,
-          imageSize: "2K"
+          imageSize: config.resolution || "2K"
         }
       }
     });
@@ -415,7 +415,7 @@ export const generateFromTextContent = async (
       config: {
         imageConfig: {
           aspectRatio: targetAspectRatio,
-          imageSize: "2K"
+          imageSize: config.resolution || "2K"
         }
       }
     });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, FileText, Presentation, Image as ImageIcon, Moon, Sun, Plus, Trash2, ChevronLeft, ChevronRight, Layers, Archive } from 'lucide-react';
-import { Slide, GenerationConfig, InfographicQueueItem } from './types';
+import { Slide, GenerationConfig, InfographicQueueItem, ImageResolution, ResolutionOption } from './types';
 import {
   processFileToSlides,
   saveImageToPdf,
@@ -18,6 +18,14 @@ import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
 
 const ADMIN_PASSWORD = '6749467';
+
+// Resolution options
+const RESOLUTION_OPTIONS: ResolutionOption[] = [
+  { id: '1K', label: '1K', description: '저해상도', estimatedSize: '~1MB' },
+  { id: '2K', label: '2K', description: '표준', estimatedSize: '~4MB' },
+  { id: '3K', label: '3K', description: '고해상도', estimatedSize: '~8MB' },
+  { id: '4K', label: '4K', description: '최고해상도', estimatedSize: '~16MB' },
+];
 
 const App: React.FC = () => {
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -50,7 +58,8 @@ const App: React.FC = () => {
     language: '한국어 (Korean)',
     selectedStyleId: 'brutalism', // Default: Brutalism
     subStyleId: undefined, // Optional sub style
-    sizeOption: 'presentation-wide'
+    sizeOption: 'presentation-wide',
+    resolution: '2K' // Default: 2K
   });
 
   // Queue State
@@ -509,6 +518,31 @@ const App: React.FC = () => {
         {/* Middle Column: Controls (350px fixed) */}
         <section className="w-[350px] shrink-0 h-full z-10 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
            <StyleSelector config={config} onUpdateConfig={updateConfig} />
+
+           {/* Resolution Selector */}
+           <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
+             <div className="flex items-center gap-2 mb-3">
+               <ImageIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">해상도 선택</span>
+             </div>
+             <div className="grid grid-cols-4 gap-2">
+               {RESOLUTION_OPTIONS.map((option) => (
+                 <button
+                   key={option.id}
+                   onClick={() => updateConfig({ resolution: option.id })}
+                   className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
+                     config.resolution === option.id
+                       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-400'
+                   }`}
+                 >
+                   <span className="text-lg font-bold">{option.label}</span>
+                   <span className="text-[10px] mt-0.5">{option.description}</span>
+                   <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">{option.estimatedSize}</span>
+                 </button>
+               ))}
+             </div>
+           </div>
 
            {/* Queue Panel - Always visible at bottom */}
            <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800/50">

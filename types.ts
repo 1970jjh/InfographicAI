@@ -44,6 +44,15 @@ export interface ColorOption {
 
 export type GenerationMode = 'infographic' | 'presentation';
 
+export type ImageResolution = '1K' | '2K' | '3K' | '4K';
+
+export interface ResolutionOption {
+  id: ImageResolution;
+  label: string;
+  description: string;
+  estimatedSize: string;
+}
+
 export interface SlideContent {
   title: string;
   subtitle?: string;
@@ -59,6 +68,7 @@ export interface GenerationConfig {
   subStyleId?: string; // Sub style (optional)
   customStyleImage?: string; // Base64
   sizeOption: string; // id of the SizeOption
+  resolution: ImageResolution; // Image resolution (1K, 2K, 3K, 4K)
   selectedColor?: string; // Hex or Name
   customInstructions?: string; // 사용자 지정 인포그래픽 생성 지침
 }
