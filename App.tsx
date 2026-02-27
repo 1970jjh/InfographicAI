@@ -173,21 +173,27 @@ const App: React.FC = () => {
     try {
       const allFiles = Array.from(files);
 
-      // Separate PDF and image files
+      // Separate PDF, Word, and image files
       const pdfFiles = allFiles.filter(f => f.type === 'application/pdf');
+      const wordFiles = allFiles.filter(f =>
+        f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        f.type === 'application/msword' ||
+        f.name.endsWith('.docx') ||
+        f.name.endsWith('.doc')
+      );
       const imageFiles = allFiles.filter(f => f.type.startsWith('image/'));
 
       // Check for unsupported files
-      const supportedCount = pdfFiles.length + imageFiles.length;
+      const supportedCount = pdfFiles.length + wordFiles.length + imageFiles.length;
       if (supportedCount === 0) {
-        alert('지원되지 않는 파일 형식입니다. PDF 또는 이미지 파일을 선택해주세요.');
+        alert('지원되지 않는 파일 형식입니다. PDF, Word 또는 이미지 파일을 선택해주세요.');
         setIsProcessing(false);
         e.target.value = '';
         return;
       }
 
       // Limit new files to 30 per upload
-      const totalFiles = [...pdfFiles, ...imageFiles];
+      const totalFiles = [...pdfFiles, ...wordFiles, ...imageFiles];
       if (totalFiles.length > 30) {
         alert('파일은 한 번에 최대 30개까지만 업로드 가능합니다. 첫 30개만 처리됩니다.');
         totalFiles.splice(30);
@@ -210,12 +216,16 @@ const App: React.FC = () => {
       const existingCount = slides.length;
       if (existingCount > 0) {
         console.log(`추가 업로드: 기존 ${existingCount}페이지 + 새로운 ${newSlides.length}페이지`);
-      } else if (pdfFiles.length > 0 && imageFiles.length > 0) {
-        console.log(`업로드 완료: PDF ${pdfFiles.length}개, 이미지 ${imageFiles.length}개 → 총 ${newSlides.length}페이지`);
+      } else if (totalFiles.length > 0) {
+        const parts = [];
+        if (pdfFiles.length > 0) parts.push(`PDF ${pdfFiles.length}개`);
+        if (wordFiles.length > 0) parts.push(`Word ${wordFiles.length}개`);
+        if (imageFiles.length > 0) parts.push(`이미지 ${imageFiles.length}개`);
+        console.log(`업로드 완료: ${parts.join(', ')} → 총 ${newSlides.length}페이지`);
       }
     } catch (error) {
       console.error(error);
-      alert('파일 처리에 실패했습니다. PDF나 이미지 파일을 확인해주세요.');
+      alert('파일 처리에 실패했습니다. PDF, Word, 이미지 파일을 확인해주세요.');
     } finally {
       setIsProcessing(false);
       e.target.value = '';
@@ -456,7 +466,7 @@ const App: React.FC = () => {
                 <h1 className="font-bold text-xl tracking-tight leading-none text-slate-900 dark:text-white">
                   인포그래픽 <span className="text-blue-600 dark:text-blue-400">AI</span>
                 </h1>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gemini 3.0 Pro</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gemini 3.1 Flash</p>
              </div>
          </div>
 
@@ -605,7 +615,7 @@ const App: React.FC = () => {
                      <p className="text-sm text-slate-500 dark:text-slate-400">
                          {generationProgress
                            ? `${generationProgress.current} / ${generationProgress.total} 생성 중`
-                           : 'Gemini 3.0 Pro가 디자인을 그리고 있습니다.'}
+                           : 'Gemini 3.1 Flash가 디자인을 그리고 있습니다.'}
                      </p>
                   </div>
               ) : currentPreviewImage ? (

@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { INFOGRAPHIC_STYLES, SIZE_OPTIONS, COLOR_OPTIONS } from '../data/styles';
 import { GenerationConfig, InfographicStyle } from '../types';
-import { Upload, Check, ChevronDown, Info, X, FileText } from 'lucide-react';
+import { Upload, Check, ChevronDown, Info, X, FileText, Type } from 'lucide-react';
 
 interface StyleSelectorProps {
   config: GenerationConfig;
@@ -149,11 +149,11 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                   💡 스타일을 클릭하면 <strong>메인/서브</strong> 중 선택할 수 있어요
                </div>
 
-               {/* Custom Upload Button */}
+               {/* Custom Style Upload (Image) */}
                <div
                   onClick={() => fileInputRef.current?.click()}
-                  className={`cursor-pointer border border-dashed rounded-xl p-4 flex items-center justify-center gap-2 transition-all mb-3
-                    ${config.selectedStyleId === 'custom'
+                  className={`cursor-pointer border border-dashed rounded-xl p-3 flex items-center justify-center gap-2 transition-all
+                    ${config.selectedStyleId === 'custom' && config.customStyleImage
                       ? 'bg-blue-50 dark:bg-slate-800 border-blue-400 text-blue-700 dark:text-blue-400'
                       : 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-750'}
                   `}
@@ -161,8 +161,33 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ config, onUpdateCo
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleCustomImageUpload} />
                   <Upload className="w-4 h-4" />
                   <span className="text-xs font-bold">
-                     {config.selectedStyleId === 'custom' && config.customStyleImage ? '맞춤형 이미지 변경' : '맞춤형 스타일 업로드'}
+                     {config.selectedStyleId === 'custom' && config.customStyleImage ? '맞춤형 이미지 변경' : '맞춤형 스타일 업로드 (이미지)'}
                   </span>
+               </div>
+
+               {/* Custom Style Text Input */}
+               <div className={`border border-dashed rounded-xl p-3 transition-all
+                    ${config.selectedStyleId === 'custom' && config.customStyleText
+                      ? 'bg-purple-50 dark:bg-slate-800 border-purple-400'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700'}
+               `}>
+                  <div className="flex items-center gap-2 mb-2">
+                     <Type className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                     <span className="text-xs font-bold text-slate-600 dark:text-slate-400">맞춤형 스타일 업로드 (텍스트)</span>
+                  </div>
+                  <textarea
+                     value={config.customStyleText || ''}
+                     onChange={(e) => {
+                        const text = e.target.value;
+                        if (text.trim()) {
+                           onUpdateConfig({ selectedStyleId: 'custom', customStyleText: text });
+                        } else {
+                           onUpdateConfig({ customStyleText: undefined });
+                        }
+                     }}
+                     placeholder="원하는 스타일을 텍스트로 설명하세요.&#10;&#10;예시:&#10;- 미니멀한 라인아트 스타일&#10;- 수채화 느낌의 따뜻한 스타일&#10;- 네온 사인 느낌의 다크 배경"
+                     className="w-full h-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  />
                </div>
 
                {/* Style Grid */}

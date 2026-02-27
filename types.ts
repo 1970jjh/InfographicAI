@@ -58,6 +58,7 @@ export interface GenerationConfig {
   selectedStyleId: string; // Main style
   subStyleId?: string; // Sub style (optional)
   customStyleImage?: string; // Base64
+  customStyleText?: string; // 텍스트로 스타일 설명
   sizeOption: string; // id of the SizeOption
   selectedColor?: string; // Hex or Name
   customInstructions?: string; // 사용자 지정 인포그래픽 생성 지침

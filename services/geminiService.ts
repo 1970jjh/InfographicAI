@@ -80,6 +80,11 @@ export const generateInfographic = async (
     ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
     : "";
 
+  // Custom Style Text
+  const customStyleTextInstruction = config.customStyleText
+    ? `\n  CUSTOM STYLE DESCRIPTION (Follow this style direction closely):\n  ${config.customStyleText}\n`
+    : "";
+
   let prompt = `Create a single, high-quality, professional infographic that summarizes the key information from the provided slide images.
 
   Language: ${config.language}
@@ -87,6 +92,7 @@ export const generateInfographic = async (
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
+  ${customStyleTextInstruction}
   ${customInstructions}
   Instructions:
   - Combine the content from the input slides into one cohesive narrative within a single image.
@@ -257,6 +263,11 @@ export const generateFromWebContent = async (
     ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
     : "";
 
+  // Custom Style Text
+  const customStyleTextInstruction = config.customStyleText
+    ? `\n  CUSTOM STYLE DESCRIPTION (Follow this style direction closely):\n  ${config.customStyleText}\n`
+    : "";
+
   // Truncate content if too long
   const maxContentLength = 8000;
   const truncatedContent = webContent.content.length > maxContentLength
@@ -278,6 +289,7 @@ export const generateFromWebContent = async (
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
+  ${customStyleTextInstruction}
   ${customInstructions}
   INSTRUCTIONS:
   - Analyze the web page content and extract the most important information, key points, statistics, and insights.
@@ -363,6 +375,11 @@ export const generateFromTextContent = async (
     ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
     : "";
 
+  // Custom Style Text
+  const customStyleTextInstruction = config.customStyleText
+    ? `\n  CUSTOM STYLE DESCRIPTION (Follow this style direction closely):\n  ${config.customStyleText}\n`
+    : "";
+
   // Truncate content if too long
   const maxContentLength = 8000;
   const truncatedContent = textContent.length > maxContentLength
@@ -380,6 +397,7 @@ export const generateFromTextContent = async (
   Style Description: ${styleDesc}
   ${sizeInstruction}
   ${colorInstruction}
+  ${customStyleTextInstruction}
   ${customInstructions}
   INSTRUCTIONS:
   - Analyze the provided text and extract the most important information, key points, statistics, and insights.
