@@ -206,7 +206,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           {/* Divider */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">또는</span>
+            <span className="text-xs text-blue-500 dark:text-blue-400 font-bold">+</span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
           </div>
 
@@ -251,7 +251,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           {/* Divider */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">또는</span>
+            <span className="text-xs text-blue-500 dark:text-blue-400 font-bold">+</span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
           </div>
 
@@ -287,7 +287,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           </div>
 
           {/* Text Content Preview */}
-          {textContent && !webContent && (
+          {textContent && (
             <div className="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-violet-500 shadow-md">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
