@@ -15,6 +15,82 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
+// Render text content to a canvas image for Word documents
+const renderTextToCanvas = (text: string, pageIndex: number, totalPages: number): string => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error("Canvas context not found");
+
+  // A4-like dimensions at 2x scale
+  canvas.width = 1600;
+  canvas.height = 2260;
+
+  // Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Header bar
+  ctx.fillStyle = '#1e40af';
+  ctx.fillRect(0, 0, canvas.width, 80);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 28px "Noto Sans KR", sans-serif';
+  ctx.fillText(`WORD 문서  —  페이지 ${pageIndex} / ${totalPages}`, 40, 52);
+
+  // Content area
+  ctx.fillStyle = '#1e293b';
+  ctx.font = '28px "Noto Sans KR", sans-serif';
+
+  const lineHeight = 42;
+  const maxWidth = canvas.width - 120;
+  const startY = 140;
+  let y = startY;
+
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (y > canvas.height - 80) break;
+
+    if (line.trim() === '') {
+      y += lineHeight * 0.5;
+      continue;
+    }
+
+    // Word wrap
+    const words = line.split('');
+    let currentLine = '';
+    for (const char of words) {
+      const testLine = currentLine + char;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine.length > 0) {
+        ctx.fillText(currentLine, 60, y);
+        currentLine = char;
+        y += lineHeight;
+        if (y > canvas.height - 80) break;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (y <= canvas.height - 80 && currentLine) {
+      ctx.fillText(currentLine, 60, y);
+      y += lineHeight;
+    }
+  }
+
+  // Footer
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '20px "Noto Sans KR", sans-serif';
+  ctx.fillText(`Page ${pageIndex}`, canvas.width / 2 - 30, canvas.height - 30);
+
+  return canvas.toDataURL('image/jpeg', 0.95);
+};
+
+// Check if a file is a Word document
+const isWordFile = (file: File): boolean => {
+  return file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+         file.type === 'application/msword' ||
+         file.name.endsWith('.docx') ||
+         file.name.endsWith('.doc');
+};
+
 export const processFileToSlides = async (file: File): Promise<Slide[]> => {
   // Handle Images (JPG/PNG/WEBP)
   if (file.type.startsWith('image/')) {
@@ -42,7 +118,7 @@ export const processFileToSlides = async (file: File): Promise<Slide[]> => {
           const viewport = page.getViewport({ scale: 2.0 });
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
-          
+
           if (!context) throw new Error("Canvas context not found");
 
           canvas.height = viewport.height;
@@ -54,7 +130,7 @@ export const processFileToSlides = async (file: File): Promise<Slide[]> => {
           }).promise;
 
           const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-          
+
           return {
             id: crypto.randomUUID(),
             pageIndex: i,
@@ -70,7 +146,58 @@ export const processFileToSlides = async (file: File): Promise<Slide[]> => {
     return Promise.all(slidePromises);
   }
 
-  throw new Error("Unsupported file type. Please use PDF or Image.");
+  // Handle Word documents (.doc, .docx)
+  if (isWordFile(file)) {
+    const mammoth = (window as any).mammoth;
+    if (!mammoth) {
+      throw new Error("Word 문서 처리 라이브러리가 로드되지 않았습니다.");
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    const fullText: string = result.value || '';
+
+    if (!fullText.trim()) {
+      throw new Error("Word 문서에서 텍스트를 추출할 수 없습니다.");
+    }
+
+    // Split text into pages (~2000 chars per page)
+    const charsPerPage = 2000;
+    const pages: string[] = [];
+    const paragraphs = fullText.split('\n');
+    let currentPage = '';
+
+    for (const para of paragraphs) {
+      if (currentPage.length + para.length > charsPerPage && currentPage.length > 0) {
+        pages.push(currentPage.trim());
+        currentPage = para + '\n';
+      } else {
+        currentPage += para + '\n';
+      }
+    }
+    if (currentPage.trim()) {
+      pages.push(currentPage.trim());
+    }
+
+    // Ensure at least one page
+    if (pages.length === 0) {
+      pages.push(fullText.substring(0, charsPerPage));
+    }
+
+    return pages.map((pageText, idx) => {
+      const dataUrl = renderTextToCanvas(pageText, idx + 1, pages.length);
+      return {
+        id: crypto.randomUUID(),
+        pageIndex: idx + 1,
+        originalImage: dataUrl,
+        currentImage: dataUrl,
+        selected: true,
+        generatedCandidates: []
+      };
+    });
+  }
+
+  throw new Error("Unsupported file type. Please use PDF, Word, or Image.");
 };
 
 export const saveImageToPdf = (imageUrl: string, filename: string = 'infographic.pdf') => {

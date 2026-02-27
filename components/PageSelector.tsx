@@ -131,7 +131,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl text-center">
             <FileUp className="w-16 h-16 text-blue-500 dark:text-blue-400 mx-auto mb-4 animate-bounce" />
             <p className="text-xl font-bold text-blue-700 dark:text-blue-300">파일을 여기에 놓으세요</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">PDF + 이미지 동시 업로드 가능</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">PDF + Word + 이미지 동시 업로드 가능</p>
           </div>
         </div>
       )}
@@ -189,7 +189,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
                   {isProcessing ? '파일 분석 중...' : '파일 업로드'}
                </span>
                <span className="text-xs text-blue-500 dark:text-slate-400 font-medium mt-0.5">
-                 PDF + 이미지 동시 업로드 가능 (최대 30개) · 끌어다 놓기
+                 PDF + Word + 이미지 동시 업로드 가능 (최대 30개) · 끌어다 놓기
                </span>
             </div>
             <input
