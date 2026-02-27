@@ -12,7 +12,7 @@ const getMimeTypeFromDataUrl = (dataUrl: string): string => {
   return match ? match[1] : 'image/jpeg';
 };
 
-const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
+const IMAGE_MODEL_NAME = 'gemini-3.1-flash-image-preview';
 
 export const ensureApiKey = async (): Promise<void> => {
   const win = window as any;
