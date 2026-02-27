@@ -12,7 +12,7 @@ import {
   saveMultipleImagesToPdf,
   saveMultipleImagesToPptx
 } from './services/pdfService';
-import { generateInfographic, generateFromWebContent, generateFromTextContent } from './services/geminiService';
+import { generateCombinedInfographic } from './services/geminiService';
 import { fetchUrlContent, WebPageContent } from './services/webService';
 import { PageSelector } from './components/PageSelector';
 import { StyleSelector } from './components/StyleSelector';
@@ -236,7 +236,6 @@ const App: React.FC = () => {
   const handleUrlSubmit = async (url: string) => {
     setIsUrlProcessing(true);
     setWebContent(null);
-    setTextContent(null);
 
     try {
       const result = await fetchUrlContent(url);
@@ -250,7 +249,6 @@ const App: React.FC = () => {
           author: result.data.author,
           thumbnail: result.data.thumbnail
         });
-        setSlides([]);
       } else {
         alert(result.error || 'URL 콘텐츠를 불러오는데 실패했습니다.');
       }
@@ -265,8 +263,6 @@ const App: React.FC = () => {
   // Text Content Handler
   const handleTextSubmit = (text: string) => {
     setTextContent(text);
-    setWebContent(null);
-    setSlides([]);
   };
 
   const toggleSlideSelection = (id: string) => {
@@ -316,16 +312,11 @@ const App: React.FC = () => {
         setGenerationProgress(prev => prev ? { ...prev, current: prev.current + 1 } : null);
 
         try {
-          let resultUrl: string | null = null;
-
-          if (item.webContent) {
-            resultUrl = await generateFromWebContent(item.webContent, config);
-          } else if (item.textContent) {
-            resultUrl = await generateFromTextContent(item.textContent, config);
-          } else if (item.selectedSlides.length > 0) {
-            // Use stored slide data directly
-            resultUrl = await generateInfographic(item.selectedSlides, config);
-          }
+          const resultUrl = await generateCombinedInfographic({
+            selectedSlides: item.selectedSlides.length > 0 ? item.selectedSlides : undefined,
+            webContent: item.webContent || undefined,
+            textContent: item.textContent || undefined,
+          }, config);
 
           if (resultUrl) {
             setQueue(prev => prev.map((q, idx) =>
@@ -373,15 +364,11 @@ const App: React.FC = () => {
     setIsGenerating(true);
 
     try {
-      let resultUrl: string | null = null;
-
-      if (webContent) {
-        resultUrl = await generateFromWebContent(webContent, config);
-      } else if (textContent) {
-        resultUrl = await generateFromTextContent(textContent, config);
-      } else {
-        resultUrl = await generateInfographic(selectedSlides, config);
-      }
+      const resultUrl = await generateCombinedInfographic({
+        selectedSlides: selectedSlides.length > 0 ? selectedSlides : undefined,
+        webContent: webContent || undefined,
+        textContent: textContent || undefined,
+      }, config);
 
       if (resultUrl) {
         setQueue(prev => prev.map(q =>
@@ -579,9 +566,11 @@ const App: React.FC = () => {
                        <div>
                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{item.name}</span>
                          <div className="text-[10px] text-slate-400">
-                           {item.webContent ? (item.webContent.type === 'youtube' ? '유튜브' : '웹페이지') :
-                            item.textContent ? '텍스트' :
-                            `슬라이드 ${item.selectedSlides.map(s => s.pageIndex).join(', ')} (${item.selectedSlides.length}개)`}
+                           {[
+                             item.selectedSlides.length > 0 && `슬라이드 ${item.selectedSlides.length}개`,
+                             item.webContent && (item.webContent.type === 'youtube' ? '유튜브' : '웹페이지'),
+                             item.textContent && '텍스트'
+                           ].filter(Boolean).join(' + ')}
                          </div>
                        </div>
                      </div>

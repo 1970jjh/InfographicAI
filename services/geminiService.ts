@@ -236,6 +236,169 @@ interface WebContentInput {
   url: string;
 }
 
+// Combined Generation Input
+interface CombinedInput {
+  selectedSlides?: Slide[];
+  webContent?: WebContentInput;
+  textContent?: string;
+}
+
+/**
+ * Generate infographic from combined sources (slides + web content + text)
+ */
+export const generateCombinedInfographic = async (
+  input: CombinedInput,
+  config: GenerationConfig
+): Promise<string | null> => {
+  await ensureApiKey();
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const parts: any[] = [];
+
+  const selectedStyle = INFOGRAPHIC_STYLES.find(s => s.id === config.selectedStyleId);
+  const styleName = selectedStyle ? selectedStyle.name : 'Custom';
+  const styleDesc = selectedStyle ? selectedStyle.description : 'Match the reference image style.';
+  const sizeInstruction = getSizeInstruction(config.sizeOption);
+
+  const colorInstruction = config.selectedColor
+    ? `Color Palette: Dominant color should be ${config.selectedColor}. Ensure the design strictly adheres to this color scheme while maintaining harmony and contrast.`
+    : "Color Palette: Auto-detect the best color scheme based on the content and style.";
+
+  const customInstructions = config.customInstructions
+    ? `\n  IMPORTANT USER INSTRUCTIONS (Must follow these with highest priority):\n  ${config.customInstructions}\n`
+    : "";
+
+  const customStyleTextInstruction = config.customStyleText
+    ? `\n  CUSTOM STYLE DESCRIPTION (Follow this style direction closely):\n  ${config.customStyleText}\n`
+    : "";
+
+  // Determine which sources are present
+  const hasSlides = input.selectedSlides && input.selectedSlides.length > 0;
+  const hasWebContent = !!input.webContent;
+  const hasTextContent = !!input.textContent;
+  const sourceCount = [hasSlides, hasWebContent, hasTextContent].filter(Boolean).length;
+
+  // Build source sections
+  let sourceSections = '';
+
+  if (hasWebContent) {
+    const maxLen = 8000;
+    const truncated = input.webContent!.content.length > maxLen
+      ? input.webContent!.content.substring(0, maxLen) + '...'
+      : input.webContent!.content;
+    sourceSections += `
+  SOURCE - WEB PAGE:
+  Title: ${input.webContent!.title}
+  URL: ${input.webContent!.url}
+  Content:
+  ${truncated}
+`;
+  }
+
+  if (hasTextContent) {
+    const maxLen = 8000;
+    const truncated = input.textContent!.length > maxLen
+      ? input.textContent!.substring(0, maxLen) + '...'
+      : input.textContent!;
+    sourceSections += `
+  SOURCE - USER PROVIDED TEXT:
+  ${truncated}
+`;
+  }
+
+  if (hasSlides) {
+    sourceSections += `
+  SOURCE - UPLOADED SLIDES:
+  Refer to the attached slide images below.
+`;
+  }
+
+  const combineInstruction = sourceCount > 1
+    ? 'Synthesize and combine ALL the provided sources below into one cohesive infographic. Cross-reference information from different sources to create a comprehensive result.'
+    : 'Create a professional infographic from the provided source.';
+
+  const prompt = `Create a single, high-quality, professional infographic.
+  ${combineInstruction}
+
+  ${sourceSections}
+
+  DESIGN REQUIREMENTS:
+  Language: ${config.language}
+  Style: ${styleName}
+  Style Description: ${styleDesc}
+  ${sizeInstruction}
+  ${colorInstruction}
+  ${customStyleTextInstruction}
+  ${customInstructions}
+  INSTRUCTIONS:
+  - Extract the most important information, key points, statistics, and insights from all provided sources.
+  - Create a visually stunning infographic that presents this information in an organized, easy-to-understand format.
+  - Use appropriate icons, charts, diagrams, or visual elements to represent the data.
+  - Create a clear and engaging title/header.
+  - Organize information hierarchically with clear sections.
+  - Use the specified language for all text in the infographic.
+  - Adhere strictly to the requested visual style.
+  - Make it visually engaging, legible, and suitable for the selected format.
+  - Include relevant visual metaphors or illustrations that enhance understanding.
+  `;
+
+  parts.push({ text: prompt });
+
+  // Add slide images
+  if (hasSlides) {
+    input.selectedSlides!.forEach((slide) => {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: getBase64FromDataUrl(slide.originalImage),
+        },
+      });
+    });
+  }
+
+  // Add custom style image
+  if (config.selectedStyleId === 'custom' && config.customStyleImage) {
+    parts.push({ text: "Reference Style Image:" });
+    parts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: getBase64FromDataUrl(config.customStyleImage),
+      },
+    });
+  }
+
+  const targetAspectRatio = mapSizeIdToAspectRatio(config.sizeOption);
+
+  try {
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL_NAME,
+      contents: { parts },
+      config: {
+        imageConfig: {
+          aspectRatio: targetAspectRatio,
+          imageSize: "2K"
+        }
+      }
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) return null;
+
+    const resultParts = candidates[0].content.parts;
+    const imagePart = resultParts.find(p => p.inlineData);
+
+    if (imagePart && imagePart.inlineData) {
+      return `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
+    }
+    return null;
+
+  } catch (error: any) {
+    console.error("Combined Infographic Gen Error:", error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
 /**
  * Generate infographic from web page content (text-based)
  */
